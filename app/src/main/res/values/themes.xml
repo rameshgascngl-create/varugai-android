@@ -1,0 +1,7 @@
+<resources>
+    <style name="Theme.Varugai" parent="Theme.AppCompat.Light.DarkActionBar">
+        <item name="android:statusBarColor">#ECEEE9</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:windowBackground">#ECEEE9</item>
+    </style>
+</resources>
