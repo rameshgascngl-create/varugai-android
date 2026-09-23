@@ -1,0 +1,2 @@
+15e873278a4465334da5a48dd2b07ffd9e4cddd155de12955fcc9a53a06f6ff0  VARUGAI_15_Semester_Grid.html
+15e873278a4465334da5a48dd2b07ffd9e4cddd155de12955fcc9a53a06f6ff0  varugai-android/app/src/main/assets/index.html

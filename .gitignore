@@ -1,0 +1,21 @@
+# Never commit signing material
+*.jks
+*.keystore
+keystore.properties
+key.properties
+*.p12
+*.pepk
+
+# Build output
+build/
+app/build/
+.gradle/
+local.properties
+captures/
+.externalNativeBuild/
+.cxx/
+
+# IDE
+.idea/
+*.iml
+.DS_Store
