@@ -37,7 +37,7 @@ jobs:
       - name: Validate Gradle wrapper
         uses: gradle/actions/wrapper-validation@v4
 
-      - name: Run native architecture and phase audits
+      - name: Run native architecture and required-corrections audits
         run: |
           ./tools/audit-native-architecture.sh
           ./tools/audit-phase2-roster.sh
@@ -99,7 +99,25 @@ jobs:
           echo "VER=$V" >> "$GITHUB_ENV"
 
           unzip -l "out/VARUGAI-$V-release.apk" | tee out/apk-file-list.txt
-          ! grep -Ei 'assets/.*\.(html|js|css)            echo "Forbidden legacy web/camera reference detected in release APK"
+          ! grep -Ei 'assets/.*\.(html|js|css)$' out/apk-file-list.txt
+          ! grep -Ei 'assets/(index\.html|app\.js|styles\.css)' out/apk-file-list.txt
+          grep -q 'libsqlcipher.so' out/apk-file-list.txt
+
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/aapt" dump xmltree "out/VARUGAI-$V-release.apk" AndroidManifest.xml | tee out/release-manifest.txt
+          ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' out/release-manifest.txt
+          ! grep -q 'androidx.compose.ui.tooling.PreviewActivity' out/release-manifest.txt
+          ! grep -q 'androidx.activity.ComponentActivity' out/release-manifest.txt
+
+          : > out/release-dex-strings.txt
+          while read -r dex; do
+            unzip -p "out/VARUGAI-$V-release.apk" "$dex" | strings >> out/release-dex-strings.txt
+          done < <(unzip -Z1 "out/VARUGAI-$V-release.apk" | grep -E '^classes([0-9]*)?\.dex$')
+          ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' out/release-dex-strings.txt
+          ! grep -Fq 'data/repository/VarugaiRepository' out/release-dex-strings.txt
+
+          if grep -E 'WebViewAssetLoader|appassets\.androidplatform\.net|android\.webkit\.WebView|android.permission.CAMERA|androidx\.camera|ACTION_IMAGE_CAPTURE' out/release-dex-strings.txt; then
+            echo "Forbidden legacy web/camera reference detected in release APK"
             exit 1
           fi
 
@@ -125,77 +143,5 @@ jobs:
             out/apk-file-list.txt
             out/release-manifest.txt
             out/release-dex-strings.txt
-            keystore-cert.txt
-            DEVICE_QA_NATIVE_V16.md
- out/apk-file-list.txt
-          ! grep -Ei 'assets/(index\.html|app\.js|styles\.css)' out/apk-file-list.txt
-          grep -q 'libsqlcipher.so' out/apk-file-list.txt
-
-          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/aapt" dump xmltree "out/VARUGAI-$V-release.apk" AndroidManifest.xml | tee out/release-manifest.txt
-          ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' out/release-manifest.txt
-          ! grep -q 'androidx.compose.ui.tooling.PreviewActivity' out/release-manifest.txt
-          ! grep -q 'androidx.activity.ComponentActivity' out/release-manifest.txt
-
-          : > out/release-dex-strings.txt
-          while read -r dex; do
-            unzip -p "out/VARUGAI-$V-release.apk" "$dex" | strings >> out/release-dex-strings.txt
-          done < <(unzip -Z1 "out/VARUGAI-$V-release.apk" | grep -E '^classes([0-9]*)?\.dex            echo "Forbidden legacy web/camera reference detected in release APK"
-            exit 1
-          fi
-
-          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/apksigner" verify --verbose --print-certs "out/VARUGAI-$V-release.apk" | tee out/apksigner.txt
-          EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
-          ACTUAL=$(grep 'Signer #1 certificate SHA-256 digest:' out/apksigner.txt | head -1 | awk -F': ' '{print $2}' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          echo "APK signer: $ACTUAL"
-          test "$ACTUAL" = "$EXPECTED"
-
-      - name: Checksums
-        run: |
-          cd out
-          sha256sum *.apk *.aab | tee SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: VARUGAI-${{ env.VER }}-native-release-candidate
-          path: |
-            out/VARUGAI-*.apk
-            out/VARUGAI-*.aab
-            out/SHA256SUMS.txt
-            out/apksigner.txt
-            out/apk-file-list.txt
-            keystore-cert.txt
-            DEVICE_QA_NATIVE_V16.md
-)
-          ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' out/release-dex-strings.txt
-          ! grep -Fq 'data/repository/VarugaiRepository' out/release-dex-strings.txt
-
-          if grep -E 'WebViewAssetLoader|appassets\.androidplatform\.net|android\.webkit\.WebView|android.permission.CAMERA|androidx\.camera|ACTION_IMAGE_CAPTURE' out/release-dex-strings.txt; then
-            echo "Forbidden legacy web/camera reference detected in release APK"
-            exit 1
-          fi
-
-          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          "$BT/apksigner" verify --verbose --print-certs "out/VARUGAI-$V-release.apk" | tee out/apksigner.txt
-          EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
-          ACTUAL=$(grep 'Signer #1 certificate SHA-256 digest:' out/apksigner.txt | head -1 | awk -F': ' '{print $2}' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          echo "APK signer: $ACTUAL"
-          test "$ACTUAL" = "$EXPECTED"
-
-      - name: Checksums
-        run: |
-          cd out
-          sha256sum *.apk *.aab | tee SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: VARUGAI-${{ env.VER }}-native-release-candidate
-          path: |
-            out/VARUGAI-*.apk
-            out/VARUGAI-*.aab
-            out/SHA256SUMS.txt
-            out/apksigner.txt
-            out/apk-file-list.txt
             keystore-cert.txt
             DEVICE_QA_NATIVE_V16.md
