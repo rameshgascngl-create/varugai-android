@@ -50,6 +50,9 @@ jobs:
       - name: Phase 5 export/backup source audit
         run: ./tools/audit-phase5-export.sh
 
+      - name: Native UX hardening audit
+        run: ./tools/audit-native-ux-hardening.sh
+
       - name: Unit tests
         run: ./gradlew --no-daemon testDebugUnitTest
 
@@ -80,3 +83,4 @@ jobs:
             PHASE3_NATIVE_IMPLEMENTATION_REPORT.md
             PHASE4_NATIVE_IMPLEMENTATION_REPORT.md
             PHASE5_NATIVE_IMPLEMENTATION_REPORT.md
+            DEVICE_QA_NATIVE_V16.md
