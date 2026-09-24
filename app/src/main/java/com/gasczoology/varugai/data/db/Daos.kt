@@ -108,11 +108,11 @@ interface AttendanceMarkDao {
     @Query("DELETE FROM attendance_marks WHERE registerId = :registerId AND date = :date")
     suspend fun deleteDay(registerId: String, date: String)
 
-    @Query("DELETE FROM attendance_marks WHERE registerId = :registerId AND date = :date AND hourIndex > :maxHour")
-    suspend fun deleteHoursAbove(registerId: String, date: String, maxHour: Int)
+    @Query("SELECT COUNT(*) FROM attendance_marks WHERE registerId = :registerId AND date = :date AND hourIndex > :maxHour")
+    suspend fun countHoursAbove(registerId: String, date: String, maxHour: Int): Int
 
-    @Query("DELETE FROM attendance_marks WHERE registerId = :registerId AND (date < :startDate OR date > :endDate)")
-    suspend fun deleteOutsideDateRange(registerId: String, startDate: String, endDate: String)
+    @Query("SELECT COUNT(*) FROM attendance_marks WHERE registerId = :registerId AND (date < :startDate OR date > :endDate)")
+    suspend fun countOutsideDateRange(registerId: String, startDate: String, endDate: String): Int
 
     @Query("DELETE FROM attendance_marks WHERE registerId = :registerId")
     suspend fun deleteForRegister(registerId: String)
