@@ -150,8 +150,14 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
     }
 
     suspend fun addWorkingDay(registerId: String, date: String, hours: Int) = db.withTransaction {
-        LocalDate.parse(date)
+        val targetDate = LocalDate.parse(date)
         require(hours in 1..8) { "Hours must be between 1 and 8" }
+        val register = requireNotNull(db.registerDao().getById(registerId)) { "Register not found." }
+        val start = register.startDate.takeIf(String::isNotBlank)?.let(LocalDate::parse)
+        val end = register.endDate.takeIf(String::isNotBlank)?.let(LocalDate::parse)
+        require(start != null && end != null && !targetDate.isBefore(start) && !targetDate.isAfter(end)) {
+            "Special working date must be inside the selected semester."
+        }
         val day = TeachingDayEntity(
             registerId = registerId,
             date = date,
