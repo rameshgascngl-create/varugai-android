@@ -225,8 +225,8 @@ object BackupCodec {
         val markRoot = data["marks"]?.jsonObject ?: JsonObject(emptyMap())
         markRoot.forEach { (date, dayElement) ->
             val dayMarks = dayElement.jsonObject
-            dayMarks.forEach { (legacyKey, encodedElement) ->
-                val sid = students.firstOrNull { it.sid == legacyKey }?.sid ?: sidByRoll[legacyKey] ?: return@forEach
+            dayMarks.forEach markLoop@ { (legacyKey, encodedElement) ->
+                val sid = students.firstOrNull { it.sid == legacyKey }?.sid ?: sidByRoll[legacyKey] ?: return@markLoop
                 val encoded = encodedElement.jsonPrimitive.content
                 encoded.forEachIndexed { index, ch ->
                     if (ch == 'P' || ch == 'A' || ch == 'O') {
@@ -277,7 +277,9 @@ object BackupCodec {
         listOf(r.courseCode, r.className, r.semester).filter { it.isNotBlank() }.joinToString(" · ").ifBlank { r.courseTitle.ifBlank { "Untitled register" } }
 
     private fun sha256(text: String): String =
-        MessageDigest.getInstance("SHA-256").digest(text.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it) }
+        MessageDigest.getInstance("SHA-256")
+            .digest(text.toByteArray(Charsets.UTF_8))
+            .joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') }
 
     private fun extractDataValue(raw: String): String {
         val match = Regex("\\"data\\"\\s*:").find(raw) ?: error("Backup data field not found.")
