@@ -115,6 +115,7 @@ jobs:
           done < <(unzip -Z1 "out/VARUGAI-$V-release.apk" | grep -E '^classes([0-9]*)?\.dex$')
           ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' out/release-dex-strings.txt
           ! grep -Fq 'data/repository/VarugaiRepository' out/release-dex-strings.txt
+          ! grep -Eq 'NotificationManagerCompat|android/app/AlarmManager|SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|RECEIVE_BOOT_COMPLETED' out/release-dex-strings.txt
 
           if grep -E 'WebViewAssetLoader|appassets\.androidplatform\.net|android\.webkit\.WebView|android.permission.CAMERA|androidx\.camera|ACTION_IMAGE_CAPTURE' out/release-dex-strings.txt; then
             echo "Forbidden legacy web/camera reference detected in release APK"
