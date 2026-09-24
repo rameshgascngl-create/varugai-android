@@ -33,7 +33,10 @@ grep -q 'Migration(1, 2)' app/src/main/java/com/gasczoology/varugai/data/db/Varu
 pass "roster date-range schema and migration present"
 
 grep -q 'countForStudent' "$DAO" || fail "attendance-aware delete guard missing"
-grep -q 'omittedWithAttendance' "$REPO" || fail "import orphan guard missing"
+grep -q 'getStudentIdsWithAttendance' "$DAO" || fail "attendance lookup for roster-import guard missing"
+grep -q 'getStudentIdsWithAttendance' "$REPO" || fail "repository does not check attendance before roster replacement"
+grep -q 'require(!plan.isBlocked)' "$REPO" || fail "blocked import is not enforced at commit"
+grep -q 'omittedWithAttendance' app/src/main/java/com/gasczoology/varugai/domain/roster/RosterModels.kt || fail "protected-omission model missing"
 grep -q 'stable student ID' "$REPO" || fail "roll-change audit trail missing"
 pass "attendance-history protection present"
 
