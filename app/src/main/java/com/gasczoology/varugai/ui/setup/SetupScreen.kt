@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
@@ -61,6 +62,7 @@ fun SetupScreen(
     var specialHours by remember(current.id) { mutableStateOf(current.defaultHours.toString()) }
     var holidayDate by remember(current.id) { mutableStateOf(current.startDate.ifBlank { LocalDate.now().toString() }) }
     var holidayName by remember(current.id) { mutableStateOf("") }
+    var confirmDeleteRegister by remember(current.id) { mutableStateOf(false) }
     val setupDateRangeValid = remember(edit.startDate, edit.endDate) {
         runCatching {
             val start = LocalDate.parse(edit.startDate)
@@ -90,7 +92,7 @@ fun SetupScreen(
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(onClick = { onNew(current) }) { Text("New class") }
                         OutlinedButton(onClick = onDuplicate) { Text("Duplicate") }
-                        OutlinedButton(onClick = onDelete, enabled = state.registers.size > 1) { Text("Delete") }
+                        OutlinedButton(onClick = { confirmDeleteRegister = true }, enabled = state.registers.size > 1) { Text("Delete") }
                     }
                 }
             }
@@ -229,6 +231,21 @@ fun SetupScreen(
             }
         }
     }
+    if (confirmDeleteRegister) {
+        AlertDialog(
+            onDismissRequest = { confirmDeleteRegister = false },
+            title = { Text("Delete this register?") },
+            text = { Text("This removes the selected register and its locally stored roster, calendar, attendance and audit history. Export a backup first if the data may be needed.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    confirmDeleteRegister = false
+                    onDelete()
+                }) { Text("Delete register") }
+            },
+            dismissButton = { TextButton(onClick = { confirmDeleteRegister = false }) { Text("Cancel") } },
+        )
+    }
+
 }
 
 @Composable
