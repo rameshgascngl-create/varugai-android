@@ -85,7 +85,10 @@ jobs:
           : > release-dex-strings.txt
           while read -r dex; do
             unzip -p "$APK" "$dex" | strings >> release-dex-strings.txt
-          done < <(unzip -Z1 "$APK" | grep -E '^classes([0-9]*)?\.dex
+          done < <(unzip -Z1 "$APK" | grep -E '^classes([0-9]*)?\.dex$')
+          ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' release-dex-strings.txt
+          ! grep -Fq 'data/repository/VarugaiRepository' release-dex-strings.txt
+
       - name: Verify debug APK has no legacy renderer
         run: |
           APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
@@ -101,36 +104,11 @@ jobs:
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
+            app/build/reports/lint-results-release.html
             apk-file-list.txt
             release-apk-file-list.txt
             release-manifest.txt
             release-dex-strings.txt
-            PHASE1_NATIVE_IMPLEMENTATION_REPORT.md
-            PHASE2_NATIVE_IMPLEMENTATION_REPORT.md
-            PHASE3_NATIVE_IMPLEMENTATION_REPORT.md
-            PHASE4_NATIVE_IMPLEMENTATION_REPORT.md
-            PHASE5_NATIVE_IMPLEMENTATION_REPORT.md
-            DEVICE_QA_NATIVE_V16.md
-)
-          ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' release-dex-strings.txt
-          ! grep -Fq 'data/repository/VarugaiRepository' release-dex-strings.txt
-
-      - name: Verify APK has no legacy renderer
-        run: |
-          APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
-          test -n "$APK"
-          unzip -l "$APK" | tee apk-file-list.txt
-          ! grep -Ei 'assets/.*\.(html|js|css)$' apk-file-list.txt
-          ! grep -Ei 'assets/(index\.html|app\.js|styles\.css)' apk-file-list.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: VARUGAI-16.0.0-phase5-debug
-          path: |
-            app/build/outputs/apk/debug/*.apk
-            app/build/reports/tests/
-            app/build/reports/lint-results-debug.html
-            apk-file-list.txt
             PHASE1_NATIVE_IMPLEMENTATION_REPORT.md
             PHASE2_NATIVE_IMPLEMENTATION_REPORT.md
             PHASE3_NATIVE_IMPLEMENTATION_REPORT.md
