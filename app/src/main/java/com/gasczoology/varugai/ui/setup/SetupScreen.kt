@@ -175,10 +175,12 @@ fun SetupScreen(
                     OutlinedButton(onClick = { onSetDayOfWeekWorking(7, false) }) { Text("Sundays holiday") }
                     DateDropdownPicker("Special working date", specialDate) { specialDate = it }
                     ChoiceDropdown("Hours for special day", specialHours, (1..8).map(Int::toString)) { specialHours = it }
+                    val specialDayInSemester = state.teachingDays.any { it.date == specialDate }
                     Button(
-                        enabled = specialDate.isNotBlank(),
+                        enabled = specialDayInSemester,
                         onClick = { onAddWorkingDay(specialDate, specialHours.toIntOrNull() ?: current.defaultHours) },
-                    ) { Text("Add special working day") }
+                    ) { Text("Make selected date a working day") }
+                    if (state.teachingDays.isNotEmpty() && !specialDayInSemester) Text("Choose a date inside the generated semester calendar.", color = MaterialTheme.colorScheme.error)
                     Text("Festival / weekday holiday within the selected semester", style = MaterialTheme.typography.titleSmall)
                     DateDropdownPicker("Holiday date", holidayDate) { holidayDate = it }
                     Field("Holiday / festival name", holidayName) { holidayName = it }
