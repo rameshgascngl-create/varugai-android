@@ -546,6 +546,70 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         )
     }
 
+    // ---------- Phase 5: native export / backup ----------
+
+    fun observeAudit(registerId: String): Flow<List<AuditEventEntity>> =
+        db.auditEventDao().observeForRegister(registerId)
+
+    suspend fun getRegisterBundle(registerId: String): com.gasczoology.varugai.data.backup.RegisterBundle =
+        db.withTransaction {
+            val register = requireNotNull(db.registerDao().getById(registerId)) { "Register not found." }
+            com.gasczoology.varugai.data.backup.RegisterBundle(
+                register = register,
+                students = db.studentDao().getForRegister(registerId),
+                days = db.teachingDayDao().getForRegister(registerId),
+                marks = db.attendanceMarkDao().getForRegister(registerId),
+                audits = db.auditEventDao().getForRegister(registerId),
+            )
+        }
+
+    suspend fun restoreRegisterBundle(
+        targetRegisterId: String,
+        imported: com.gasczoology.varugai.data.backup.RegisterBundle,
+        sourceLabel: String,
+    ) = db.withTransaction {
+        val existing = requireNotNull(db.registerDao().getById(targetRegisterId)) { "Target register not found." }
+
+        val restoredRegister = imported.register.copy(
+            id = targetRegisterId,
+            createdAt = existing.createdAt,
+            updatedAt = System.currentTimeMillis(),
+        )
+        val restoredStudents = imported.students.map {
+            it.copy(registerId = targetRegisterId)
+        }
+        val restoredDays = imported.days.map {
+            it.copy(registerId = targetRegisterId)
+        }
+        val restoredMarks = imported.marks.map {
+            it.copy(registerId = targetRegisterId)
+        }
+        val restoredAudits = imported.audits.map {
+            it.copy(id = 0, registerId = targetRegisterId)
+        }
+
+        // Destructive restore is transaction-scoped: failure rolls the entire target
+        // register back to its pre-restore state.
+        db.attendanceMarkDao().deleteForRegister(targetRegisterId)
+        db.auditEventDao().deleteForRegister(targetRegisterId)
+        db.studentDao().deleteForRegister(targetRegisterId)
+        db.teachingDayDao().deleteForRegister(targetRegisterId)
+
+        db.registerDao().upsert(restoredRegister)
+        if (restoredStudents.isNotEmpty()) db.studentDao().upsertAll(restoredStudents)
+        if (restoredDays.isNotEmpty()) db.teachingDayDao().upsertAll(restoredDays)
+        if (restoredMarks.isNotEmpty()) db.attendanceMarkDao().upsertAll(restoredMarks)
+        if (restoredAudits.isNotEmpty()) db.auditEventDao().insertAll(restoredAudits)
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = targetRegisterId,
+                timestamp = System.currentTimeMillis(),
+                kind = "restore",
+                message = "Backup restored from $sourceLabel",
+            )
+        )
+    }
+
     private suspend fun normalizeRosterOrder(registerId: String) {
         val students = db.studentDao().getForRegister(registerId)
         db.studentDao().upsertAll(students.mapIndexed { index, student -> student.copy(rosterOrder = index) })
