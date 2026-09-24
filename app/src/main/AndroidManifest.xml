@@ -1,7 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- Intentionally no INTERNET, CAMERA, or broad storage permission. -->
+    <!-- Offline-only. Intentionally no INTERNET, CAMERA, notification, alarm, or broad storage permission. -->
 
     <application
         android:name=".VarugaiApplication"
@@ -24,6 +25,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Defensive merger override: this library class must never be exported as an app component. -->
+        <activity
+            android:name="androidx.activity.ComponentActivity"
+            tools:node="remove" />
 
     </application>
 </manifest>
