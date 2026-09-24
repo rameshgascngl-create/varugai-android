@@ -1,15 +1,19 @@
 package com.gasczoology.varugai.ui.setup
 
 import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.Checkbox
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
@@ -23,6 +27,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import java.time.LocalDate
+import java.time.YearMonth
 import com.gasczoology.varugai.data.db.RegisterEntity
 import com.gasczoology.varugai.data.db.TeachingDayEntity
 
@@ -49,8 +55,10 @@ fun SetupScreen(
 
     var edit by remember(current.id, current.updatedAt) { mutableStateOf(current) }
     var weekdays by remember(current.id, current.calendarWeekdaysCsv) { mutableStateOf(state.selectedWeekdays) }
-    var specialDate by remember(current.id) { mutableStateOf("") }
+    var specialDate by remember(current.id) { mutableStateOf(current.startDate.ifBlank { LocalDate.now().toString() }) }
     var specialHours by remember(current.id) { mutableStateOf(current.defaultHours.toString()) }
+    var holidayDate by remember(current.id) { mutableStateOf(current.startDate.ifBlank { LocalDate.now().toString() }) }
+    var holidayName by remember(current.id) { mutableStateOf("") }
 
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -91,9 +99,12 @@ fun SetupScreen(
                     Field("Class / programme", edit.className) { edit = edit.copy(className = it) }
                     Field("Semester", edit.semester) { edit = edit.copy(semester = it) }
                     Field("Academic year", edit.academicYear) { edit = edit.copy(academicYear = it) }
-                    Field("Start date (YYYY-MM-DD)", edit.startDate) { edit = edit.copy(startDate = it) }
-                    Field("End date (YYYY-MM-DD)", edit.endDate) { edit = edit.copy(endDate = it) }
-                    IntField("Default hours per day", edit.defaultHours, 1, 8) { edit = edit.copy(defaultHours = it) }
+                    DateDropdownPicker("Start date", edit.startDate) { edit = edit.copy(startDate = it) }
+                    DateDropdownPicker("End date", edit.endDate) { edit = edit.copy(endDate = it) }
+                    ChoiceDropdown("Total hours per day", edit.defaultHours.toString(), (1..8).map(Int::toString)) {
+                        edit = edit.copy(defaultHours = it.toInt())
+                        specialHours = it
+                    }
                 }
             }
         }
@@ -148,15 +159,24 @@ fun SetupScreen(
                         OutlinedButton(onClick = { onSetDayOfWeekWorking(6, false) }) { Text("Saturdays holiday") }
                     }
                     OutlinedButton(onClick = { onSetDayOfWeekWorking(7, false) }) { Text("Sundays holiday") }
-                    Field("Add special working date (YYYY-MM-DD)", specialDate) { specialDate = it }
-                    IntTextField("Hours", specialHours) { specialHours = it.filter(Char::isDigit) }
+                    DateDropdownPicker("Special working date", specialDate) { specialDate = it }
+                    ChoiceDropdown("Hours for special day", specialHours, (1..8).map(Int::toString)) { specialHours = it }
                     Button(
-                        enabled = specialDate.isNotBlank() && (specialHours.toIntOrNull()?.let { it in 1..8 } == true),
-                        onClick = {
-                            onAddWorkingDay(specialDate, specialHours.toIntOrNull() ?: current.defaultHours)
-                            specialDate = ""
-                        },
+                        enabled = specialDate.isNotBlank(),
+                        onClick = { onAddWorkingDay(specialDate, specialHours.toIntOrNull() ?: current.defaultHours) },
                     ) { Text("Add special working day") }
+                    Text("Festival / weekday holiday within the selected semester", style = MaterialTheme.typography.titleSmall)
+                    DateDropdownPicker("Holiday date", holidayDate) { holidayDate = it }
+                    Field("Holiday / festival name", holidayName) { holidayName = it }
+                    val holidayDay = state.teachingDays.firstOrNull { it.date == holidayDate }
+                    Button(
+                        enabled = holidayDay != null && holidayName.isNotBlank(),
+                        onClick = {
+                            holidayDay?.let { onUpdateTeachingDay(it.copy(isWorking = false, isComplete = false, note = holidayName.trim())) }
+                            holidayName = ""
+                        },
+                    ) { Text("Mark selected date as holiday") }
+                    if (state.teachingDays.isEmpty()) Text("Generate the calendar first, then add festival/weekday holidays inside the chosen date range.")
                 }
             }
         }
@@ -205,6 +225,58 @@ private fun TeachingDayCard(day: TeachingDayEntity, onUpdate: (TeachingDayEntity
             OutlinedButton(onClick = {
                 onUpdate(day.copy(hours = hoursText.toIntOrNull()?.coerceIn(1, 8) ?: day.hours, note = note))
             }) { Text("Save day") }
+        }
+    }
+}
+
+@Composable
+private fun DateDropdownPicker(label: String, isoDate: String, onIsoDate: (String) -> Unit) {
+    val today = remember { LocalDate.now() }
+    val parsed = remember(isoDate) { runCatching { LocalDate.parse(isoDate) }.getOrNull() ?: today }
+    var day by remember(isoDate) { mutableStateOf(parsed.dayOfMonth) }
+    var month by remember(isoDate) { mutableStateOf(parsed.monthValue) }
+    var year by remember(isoDate) { mutableStateOf(parsed.year) }
+
+    fun commit(newDay: Int = day, newMonth: Int = month, newYear: Int = year) {
+        val safeDay = newDay.coerceAtMost(YearMonth.of(newYear, newMonth).lengthOfMonth())
+        day = safeDay
+        month = newMonth
+        year = newYear
+        onIsoDate(LocalDate.of(newYear, newMonth, safeDay).toString())
+    }
+
+    Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+        Text(label, style = MaterialTheme.typography.labelLarge)
+        Row(horizontalArrangement = Arrangement.spacedBy(6.dp)) {
+            ChoiceDropdown("Day", day.toString().padStart(2, '0'), (1..YearMonth.of(year, month).lengthOfMonth()).map { it.toString().padStart(2, '0') }) {
+                commit(newDay = it.toInt())
+            }
+            ChoiceDropdown("Month", month.toString().padStart(2, '0'), (1..12).map { it.toString().padStart(2, '0') }) {
+                commit(newMonth = it.toInt())
+            }
+            ChoiceDropdown("Year", year.toString(), (2000..2100).map(Int::toString)) {
+                commit(newYear = it.toInt())
+            }
+        }
+        Text("Selected: " + day.toString().padStart(2, '0') + "/" + month.toString().padStart(2, '0') + "/" + year)
+    }
+}
+
+@Composable
+private fun ChoiceDropdown(label: String, selected: String, options: List<String>, onSelected: (String) -> Unit) {
+    var expanded by remember { mutableStateOf(false) }
+    Box {
+        OutlinedButton(onClick = { expanded = true }) { Text("$label: $selected") }
+        DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }, modifier = Modifier.heightIn(max = 280.dp)) {
+            options.forEach { option ->
+                DropdownMenuItem(
+                    text = { Text(option) },
+                    onClick = {
+                        expanded = false
+                        onSelected(option)
+                    },
+                )
+            }
         }
     }
 }
