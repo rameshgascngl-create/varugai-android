@@ -63,6 +63,12 @@ interface TeachingDayDao {
     @Query("SELECT * FROM teaching_days WHERE registerId = :registerId ORDER BY date")
     suspend fun getForRegister(registerId: String): List<TeachingDayEntity>
 
+    @Query("SELECT * FROM teaching_days WHERE registerId = :registerId AND date = :date LIMIT 1")
+    suspend fun getByDate(registerId: String, date: String): TeachingDayEntity?
+
+    @Upsert
+    suspend fun upsert(item: TeachingDayEntity)
+
     @Upsert
     suspend fun upsertAll(items: List<TeachingDayEntity>)
 
@@ -73,7 +79,13 @@ interface TeachingDayDao {
 @Dao
 interface AttendanceMarkDao {
     @Query("SELECT * FROM attendance_marks WHERE registerId = :registerId")
+    fun observeForRegister(registerId: String): Flow<List<AttendanceMarkEntity>>
+
+    @Query("SELECT * FROM attendance_marks WHERE registerId = :registerId")
     suspend fun getForRegister(registerId: String): List<AttendanceMarkEntity>
+
+    @Query("SELECT * FROM attendance_marks WHERE registerId = :registerId AND date = :date")
+    suspend fun getForDay(registerId: String, date: String): List<AttendanceMarkEntity>
 
     @Query("SELECT COUNT(*) FROM attendance_marks WHERE registerId = :registerId AND sid = :sid")
     suspend fun countForStudent(registerId: String, sid: String): Int
@@ -82,7 +94,19 @@ interface AttendanceMarkDao {
     suspend fun getStudentIdsWithAttendance(registerId: String): List<String>
 
     @Upsert
+    suspend fun upsert(item: AttendanceMarkEntity)
+
+    @Upsert
     suspend fun upsertAll(items: List<AttendanceMarkEntity>)
+
+    @Query("DELETE FROM attendance_marks WHERE registerId = :registerId AND date = :date AND sid = :sid AND hourIndex = :hourIndex")
+    suspend fun deleteCell(registerId: String, date: String, sid: String, hourIndex: Int)
+
+    @Query("DELETE FROM attendance_marks WHERE registerId = :registerId AND date = :date AND hourIndex = :hourIndex")
+    suspend fun deleteHour(registerId: String, date: String, hourIndex: Int)
+
+    @Query("DELETE FROM attendance_marks WHERE registerId = :registerId AND date = :date")
+    suspend fun deleteDay(registerId: String, date: String)
 
     @Query("DELETE FROM attendance_marks WHERE registerId = :registerId")
     suspend fun deleteForRegister(registerId: String)
