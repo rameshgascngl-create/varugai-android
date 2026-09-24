@@ -125,8 +125,9 @@ jobs:
 
           "$BT/apksigner" verify --verbose --print-certs "out/VARUGAI-$V-release.apk" | tee out/apksigner.txt
           EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
-          ACTUAL=$(grep 'Signer #1 certificate SHA-256 digest:' out/apksigner.txt | head -1 | awk -F': ' '{print $2}' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
+          ACTUAL=$(grep -E 'Signer.*certificate SHA-256 digest:' out/apksigner.txt | head -1 | awk -F': ' '{print $NF}' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
           echo "APK signer: $ACTUAL"
+          test -n "$ACTUAL"
           test "$ACTUAL" = "$EXPECTED"
 
       - name: Checksums
