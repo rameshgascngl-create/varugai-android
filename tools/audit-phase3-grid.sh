@@ -42,6 +42,16 @@ grep -q 'Reopen' "$GRID" || fail "reopen UI missing"
 grep -q 'Today' "$GRID" || fail "Today navigation missing"
 pass "required Grid controls present"
 
+SETUP=app/src/main/java/com/gasczoology/varugai/ui/setup/SetupScreen.kt
+
+grep -q 'DateDropdownPicker("Start date"' "$SETUP" || fail "DD/MM/YYYY start-date selector missing"
+grep -q 'DateDropdownPicker("End date"' "$SETUP" || fail "DD/MM/YYYY end-date selector missing"
+grep -q 'Total hours per day' "$SETUP" || fail "initial total-hours-per-day selector missing"
+grep -q 'Mark selected date as holiday' "$SETUP" || fail "festival/weekday holiday selector missing"
+grep -q 'Semester grid — student names stay on the left' "$GRID" || fail "left-name horizontal semester matrix missing"
+grep -q 'horizontalScroll(matrixScroll)' "$GRID" || fail "shared longitudinal date scrolling missing"
+pass "requested setup/calendar/matrix controls present"
+
 [[ -f app/src/test/java/com/gasczoology/varugai/domain/attendance/AttendanceCalculatorTest.kt ]] || fail "attendance unit tests missing"
 pass "Phase 3 unit tests present"
 
