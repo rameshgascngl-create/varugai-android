@@ -125,4 +125,7 @@ interface AuditEventDao {
 
     @Insert
     suspend fun insertAll(events: List<AuditEventEntity>)
+
+    @Query("DELETE FROM audit_events WHERE registerId = :registerId")
+    suspend fun deleteForRegister(registerId: String)
 }
