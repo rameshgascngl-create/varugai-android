@@ -8,6 +8,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: varugai-native-phase-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   phase-gate:
     runs-on: ubuntu-latest
