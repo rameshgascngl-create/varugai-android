@@ -411,6 +411,141 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         db.auditEventDao().insertAll(events)
     }
 
+    // ---------- Phase 3: native attendance grid ----------
+
+    fun observeAttendance(registerId: String): Flow<List<com.gasczoology.varugai.data.db.AttendanceMarkEntity>> =
+        db.attendanceMarkDao().observeForRegister(registerId)
+
+    suspend fun snapshotDay(registerId: String, date: String): Pair<TeachingDayEntity, List<com.gasczoology.varugai.data.db.AttendanceMarkEntity>> {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) { "Teaching day not found." }
+        return day to db.attendanceMarkDao().getForDay(registerId, date)
+    }
+
+    suspend fun setAttendanceMark(registerId: String, date: String, sid: String, hourIndex: Int, status: String?) = db.withTransaction {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) { "Teaching day not found." }
+        require(day.isWorking) { "Attendance cannot be entered for a holiday/excluded day." }
+        require(hourIndex in 1..day.hours) { "Hour is outside the configured teaching-day range." }
+        val student = requireNotNull(db.studentDao().getBySid(registerId, sid)) { "Student not found." }
+        require(com.gasczoology.varugai.domain.attendance.AttendanceCalculator.isActiveOn(student, date)) {
+            "This date is outside the student's counted attendance period."
+        }
+        val clean = status?.uppercase(Locale.ROOT)
+        require(clean == null || clean in setOf("P", "A", "O")) { "Attendance must be P, A, O, or blank." }
+        if (clean == null) {
+            db.attendanceMarkDao().deleteCell(registerId, date, sid, hourIndex)
+        } else {
+            db.attendanceMarkDao().upsert(
+                com.gasczoology.varugai.data.db.AttendanceMarkEntity(registerId, date, sid, hourIndex, clean)
+            )
+        }
+        if (day.isComplete) db.teachingDayDao().upsert(day.copy(isComplete = false))
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "attendance",
+                date = date,
+                sid = sid,
+                message = "Hour $hourIndex set to ${clean ?: "blank"}",
+            )
+        )
+    }
+
+    suspend fun allPresent(registerId: String, date: String) = db.withTransaction {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) { "Teaching day not found." }
+        require(day.isWorking) { "Attendance cannot be entered for a holiday/excluded day." }
+        val students = db.studentDao().getForRegister(registerId)
+            .filter { com.gasczoology.varugai.domain.attendance.AttendanceCalculator.isActiveOn(it, date) }
+        val marks = buildList {
+            for (student in students) {
+                for (hour in 1..day.hours) {
+                    add(com.gasczoology.varugai.data.db.AttendanceMarkEntity(registerId, date, student.sid, hour, "P"))
+                }
+            }
+        }
+        if (marks.isNotEmpty()) db.attendanceMarkDao().upsertAll(marks)
+        if (day.isComplete) db.teachingDayDao().upsert(day.copy(isComplete = false))
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "attendance",
+                date = date,
+                message = "All active students marked Present for ${day.hours} hour(s)",
+            )
+        )
+    }
+
+    suspend fun clearAttendanceDay(registerId: String, date: String) = db.withTransaction {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) { "Teaching day not found." }
+        db.attendanceMarkDao().deleteDay(registerId, date)
+        if (day.isComplete) db.teachingDayDao().upsert(day.copy(isComplete = false))
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "attendance",
+                date = date,
+                message = "Attendance day cleared and reopened",
+            )
+        )
+    }
+
+    suspend fun clearAttendanceHour(registerId: String, date: String, hourIndex: Int) = db.withTransaction {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) { "Teaching day not found." }
+        require(hourIndex in 1..day.hours) { "Hour is outside the configured teaching-day range." }
+        db.attendanceMarkDao().deleteHour(registerId, date, hourIndex)
+        if (day.isComplete) db.teachingDayDao().upsert(day.copy(isComplete = false))
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "attendance",
+                date = date,
+                message = "Hour $hourIndex cleared for the day",
+            )
+        )
+    }
+
+    suspend fun setDayComplete(registerId: String, date: String, complete: Boolean) = db.withTransaction {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) { "Teaching day not found." }
+        require(day.isWorking) { "A holiday/excluded day cannot be completed for attendance." }
+        if (complete) {
+            val students = db.studentDao().getForRegister(registerId)
+            val marks = db.attendanceMarkDao().getForDay(registerId, date)
+            val check = com.gasczoology.varugai.domain.attendance.AttendanceCalculator.dayCompletionCheck(day, students, marks)
+            require(check.missingCells == 0) { "${check.missingCells} attendance cell(s) are still blank for active students." }
+        }
+        db.teachingDayDao().upsert(day.copy(isComplete = complete))
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "attendance",
+                date = date,
+                message = if (complete) "Attendance day completed" else "Attendance day reopened",
+            )
+        )
+    }
+
+    suspend fun restoreDaySnapshot(
+        day: TeachingDayEntity,
+        marks: List<com.gasczoology.varugai.data.db.AttendanceMarkEntity>,
+    ) = db.withTransaction {
+        db.attendanceMarkDao().deleteDay(day.registerId, day.date)
+        if (marks.isNotEmpty()) db.attendanceMarkDao().upsertAll(marks)
+        db.teachingDayDao().upsert(day)
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = day.registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "undo",
+                date = day.date,
+                message = "Previous attendance state restored",
+            )
+        )
+    }
+
     private suspend fun normalizeRosterOrder(registerId: String) {
         val students = db.studentDao().getForRegister(registerId)
         db.studentDao().upsertAll(students.mapIndexed { index, student -> student.copy(rosterOrder = index) })
