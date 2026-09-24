@@ -35,6 +35,7 @@ data class GridUiState(
     val filter: GridStudentFilter = GridStudentFilter.ALL,
     val query: String = "",
     val marksByCell: Map<Pair<String, Int>, String> = emptyMap(),
+    val allMarksByCell: Map<Triple<String, String, Int>, String> = emptyMap(),
     val canUndo: Boolean = false,
     val message: String? = null,
 )
@@ -114,6 +115,7 @@ class GridViewModel(
                 .filter { it.date == resolvedDate }
                 .associate { (it.sid to it.hourIndex) to it.status }
         }
+        val allMarks = data.marks.associate { Triple(it.date, it.sid, it.hourIndex) to it.status }
         GridUiState(
             register = data.register,
             students = data.students,
@@ -126,6 +128,7 @@ class GridViewModel(
             filter = prefs.filter,
             query = prefs.query,
             marksByCell = selectedMarks,
+            allMarksByCell = allMarks,
             canUndo = undo != null,
             message = msg,
         )
@@ -152,10 +155,9 @@ class GridViewModel(
             ?: days.first().date
     }
 
-    fun cycleMark(student: StudentEntity, hourIndex: Int) {
+    fun cycleMark(student: StudentEntity, date: String, hourIndex: Int) {
         val state = uiState.value
-        val date = state.selectedDate ?: return
-        val current = state.marksByCell[student.sid to hourIndex]
+        val current = state.allMarksByCell[Triple(date, student.sid, hourIndex)]
         val next = when (current) {
             null -> "P"
             "P" -> "A"
