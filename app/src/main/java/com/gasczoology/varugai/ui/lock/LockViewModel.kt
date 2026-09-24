@@ -79,7 +79,7 @@ class LockViewModel(
     fun openSettings(pin: String) {
         val expected = storedDigest
         if (expected != null && pinSecurity.matches(pin, expected)) {
-            _uiState.value = _uiState.value.copy(settingsMode = true, message = null)
+            _uiState.value = _uiState.value.copy(locked = false, settingsMode = true, message = null)
         } else {
             setMessage("Enter the current PIN to change lock settings.")
         }
