@@ -1,23 +1,29 @@
 # VARUGAI 16 — Native Android migration
 
-VARUGAI 16 replaces the previous bundled HTML/WebView renderer with a native Android application.
+VARUGAI 16 replaces the previous bundled HTML/WebView renderer with a genuine native Android application.
 
-## Current branch gate
+## Native release branch
 
 Branch: `release/varugai-native-v16`
 
-Implemented at the Phase-2 gate:
-- Kotlin + Jetpack Compose + Material 3 UI
-- Room local database and DataStore preferences
-- Native Setup workflow
-- Native Roster workflow with stable student IDs
-- CSV/TSV/TXT/XLSX/DOCX roster import
-- Native XLSX roster export through Android Storage Access Framework
-- attendance-history protection when roll numbers change or imported rosters omit existing students
-- no WebView, WebViewAssetLoader, HTML/CSS/JS application renderer
-- no INTERNET permission
-- no CAMERA permission, CameraX, photo evidence, OCR, or scanned-attendance capture
+Implemented workflows:
+- **Setup** — register metadata, attendance thresholds, teaching calendar, holidays/short days/special working days.
+- **Roster** — stable student IDs, add/edit/reorder, paste/import, CSV/TSV/TXT/XLSX/DOCX roster ingestion, XLSX roster export.
+- **Grid** — native P/A/OD hourly attendance, All Present, clear hour/day, complete/reopen, undo, date navigation and active-student filtering.
+- **Summary** — Present/OD/Absent/count hours, equivalent days, exact percentage classification, 75/65/50 boundaries, verify band and forecast.
+- **Export** — XLSX workbook, summary CSV, audit CSV, native PDF statement, schema-3 JSON backup and legacy schema-1/2 JSON restore.
 
-Grid, Summary and Export are deliberately held behind later audited phases. Production release is locked until all phases and physical-device QA pass.
+Architecture:
+- Kotlin + Jetpack Compose + Material 3.
+- Room is the authoritative attendance store; DataStore holds lightweight UI preferences only.
+- No WebView, WebViewAssetLoader, bundled HTML/CSS/JS application renderer or JavaScript bridge.
+- No INTERNET permission.
+- No CAMERA permission, CameraX, live photo capture, photo evidence, OCR or scanned-attendance capture.
+- Automatic Android/cloud backup disabled; user-controlled exports use the Storage Access Framework.
 
-Package identity remains `com.gasczoology.varugai`; target release version is `16.0.0` / `16000`.
+Identity:
+- package: `com.gasczoology.varugai`
+- target version: `16.0.0`
+- target versionCode: `16000`
+
+The production release workflow is intentionally locked. It may be enabled only after the Phase-5 CI gate passes, the production signer is verified against the existing certificate, and physical-device QA is signed off.

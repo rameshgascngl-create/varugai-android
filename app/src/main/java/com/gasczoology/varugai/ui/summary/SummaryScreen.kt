@@ -67,6 +67,7 @@ fun SummaryScreen(
                     Text("${row.student.roll} · ${row.student.name}", style = MaterialTheme.typography.titleMedium)
                     if (row.student.registerNumber.isNotBlank()) Text("Reg. No: ${row.student.registerNumber}")
                     Text("P ${row.totals.presentHours} · OD ${row.totals.odHours} · A ${row.totals.absentHours} · Counted ${row.totals.countedHours} h")
+                    Text("Equivalent days: ${register?.defaultHours?.takeIf { it > 0 }?.let { fmt(row.totals.countedHours.toDouble() / it) } ?: "—"}")
                     Text("Attendance: ${row.totals.percentage?.let { fmt(it) + "%" } ?: "—"}")
                     Text(row.assessment.label)
                     if (row.assessment.nearThreshold) Text("Near threshold — verify source attendance records")

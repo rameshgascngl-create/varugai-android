@@ -1,7 +1,8 @@
 name: VARUGAI Native Production Release — LOCKED
 
-# Production release stays manual and must not be used until all native phases,
-# legacy restore, signing verification and physical-device QA are complete.
+# Native implementation is staged behind audited gates.
+# This workflow remains deliberately locked until production signing verification
+# and physical-device QA are complete.
 on:
   workflow_dispatch:
 
@@ -12,8 +13,8 @@ jobs:
   locked:
     runs-on: ubuntu-latest
     steps:
-      - name: Release gate intentionally locked during native migration
+      - name: Release gate intentionally locked
         run: |
           echo "VARUGAI 16 production release is locked."
-          echo "Complete Phases 3–5, legacy import tests, release signing and device QA before enabling this workflow."
+          echo "All native phases must have a green CI gate, then production signing and physical-device QA must pass before this workflow is enabled."
           exit 1
