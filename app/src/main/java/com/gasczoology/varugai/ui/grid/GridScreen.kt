@@ -18,13 +18,17 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import java.time.LocalDate
+import androidx.compose.ui.text.style.TextAlign
 import com.gasczoology.varugai.data.db.StudentEntity
 import com.gasczoology.varugai.domain.attendance.AttendanceCalculator
+import com.gasczoology.varugai.ui.common.displayDate
+import com.gasczoology.varugai.ui.common.displayShortDate
+import com.gasczoology.varugai.ui.common.displayWeekday
 
 @Composable
 fun GridScreen(
@@ -80,8 +84,8 @@ fun GridScreen(
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
             ) {
                 state.windowDates.forEach { date ->
-                    val label = date.date.takeLast(5) +
-                        if (!date.isWorking) " H" else if (date.isComplete) " ✓" else ""
+                    val label = displayShortDate(date.date) +
+                        if (!date.isWorking) " HOL" else if (date.isComplete) " ✓" else ""
                     if (date.date == state.selectedDate) {
                         Button(onClick = { onSelectDate(date.date) }) { Text(label) }
                     } else {
@@ -97,7 +101,8 @@ fun GridScreen(
             } else {
                 Card(Modifier.fillMaxWidth()) {
                     Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Text("${day.date} · ${if (day.isWorking) "${day.hours} teaching hour(s)" else "Holiday / excluded"}")
+                        Text("${displayDate(day.date)} · ${displayWeekday(day.date)} · ${if (day.isWorking) "${day.hours} teaching hour(s)" else "Holiday / excluded"}")
+                        if (!day.isWorking && day.note.isNotBlank()) Text(day.note, style = MaterialTheme.typography.titleSmall)
                         Text(
                             if (day.isComplete) {
                                 "Day status: COMPLETED — included in denominator"
@@ -150,6 +155,13 @@ fun GridScreen(
                 singleLine = true,
             )
             Text("${state.visibleStudents.size} of ${state.students.size} student(s)")
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                StatusLegend("P", "Present")
+                StatusLegend("A", "Absent")
+                StatusLegend("OD", "On Duty")
+                StatusLegend("–", "Blank")
+            }
+            Text("Recommended entry: All Present → tap only exceptions to A or OD → Complete day.")
         }
 
         if (state.days.isNotEmpty()) {
@@ -192,17 +204,14 @@ private fun DayHeaderCell(
     selected: Boolean,
     onClick: () -> Unit,
 ) {
-    val date = runCatching { LocalDate.parse(day.date) }.getOrNull()
-    val ddmm = if (date != null) {
-        date.dayOfMonth.toString().padStart(2, '0') + "/" + date.monthValue.toString().padStart(2, '0')
-    } else day.date
-    val weekday = date?.dayOfWeek?.name?.take(3).orEmpty()
-    val label = ddmm + "\n" + weekday + if (!day.isWorking) "\nHOL" else if (day.isComplete) "\n✓" else ""
+    val label = displayShortDate(day.date) + "\n" +
+        displayWeekday(day.date).take(3) +
+        if (!day.isWorking) "\nHOL" else if (day.isComplete) "\n✓" else ""
     val width = dayColumnWidth(day)
     if (selected) {
-        Button(onClick = onClick, modifier = Modifier.width(width)) { Text(label) }
+        Button(onClick = onClick, modifier = Modifier.width(width)) { Text(label, textAlign = TextAlign.Center) }
     } else {
-        OutlinedButton(onClick = onClick, modifier = Modifier.width(width)) { Text(label) }
+        OutlinedButton(onClick = onClick, modifier = Modifier.width(width)) { Text(label, textAlign = TextAlign.Center) }
     }
 }
 
@@ -215,10 +224,10 @@ private fun StudentMatrixRow(
     onCycleMark: (StudentEntity, String, Int) -> Unit,
 ) {
     Row(Modifier.fillMaxWidth()) {
-        Card(Modifier.width(180.dp)) {
-            Column(Modifier.padding(10.dp)) {
-                Text(student.name, style = MaterialTheme.typography.titleSmall)
-                Text(student.roll, style = MaterialTheme.typography.labelMedium)
+        Card(Modifier.width(170.dp)) {
+            Column(Modifier.padding(horizontal = 10.dp, vertical = 8.dp)) {
+                Text(student.name, style = MaterialTheme.typography.titleSmall, maxLines = 2)
+                Text("Roll ${student.roll}", style = MaterialTheme.typography.labelMedium)
             }
         }
         Row(
@@ -241,28 +250,72 @@ private fun DayAttendanceCell(
 ) {
     val active = day.isWorking && AttendanceCalculator.isActiveOn(student, day.date)
     Card(Modifier.width(dayColumnWidth(day))) {
-        if (!day.isWorking) {
-            Column(Modifier.padding(8.dp)) {
-                Text("HOL", style = MaterialTheme.typography.labelLarge)
-                if (day.note.isNotBlank()) Text(day.note, style = MaterialTheme.typography.labelSmall)
+        when {
+            !day.isWorking -> {
+                Column(Modifier.padding(8.dp)) {
+                    Text("HOL", style = MaterialTheme.typography.labelLarge)
+                    if (day.note.isNotBlank()) Text(day.note, style = MaterialTheme.typography.labelSmall, maxLines = 2)
+                }
             }
-        } else if (!active) {
-            Text("—", modifier = Modifier.padding(12.dp))
-        } else {
-            Row(
-                modifier = Modifier.padding(horizontal = 4.dp, vertical = 6.dp),
-                horizontalArrangement = Arrangement.spacedBy(2.dp),
+            !active -> Text("Not counted", modifier = Modifier.padding(10.dp), style = MaterialTheme.typography.labelMedium)
+            else -> Row(
+                modifier = Modifier.padding(horizontal = 4.dp, vertical = 5.dp),
+                horizontalArrangement = Arrangement.spacedBy(3.dp),
             ) {
                 for (hour in 1..day.hours) {
                     val status = marks[Triple(day.date, student.sid, hour)]
-                    TextButton(onClick = { onCycleMark(student, day.date, hour) }) {
-                        Text(hour.toString() + ":" + (status ?: "–"))
-                    }
+                    AttendanceCell(
+                        hour = hour,
+                        status = status,
+                        onClick = { onCycleMark(student, day.date, hour) },
+                    )
                 }
             }
         }
     }
 }
 
+@Composable
+private fun AttendanceCell(hour: Int, status: String?, onClick: () -> Unit) {
+    val colors = MaterialTheme.colorScheme
+    val background = when (status) {
+        "P" -> colors.primaryContainer
+        "A" -> colors.errorContainer
+        "O" -> colors.tertiaryContainer
+        else -> colors.surfaceVariant
+    }
+    val foreground = when (status) {
+        "P" -> colors.onPrimaryContainer
+        "A" -> colors.onErrorContainer
+        "O" -> colors.onTertiaryContainer
+        else -> colors.onSurfaceVariant
+    }
+    Surface(
+        onClick = onClick,
+        modifier = Modifier.width(48.dp),
+        color = background,
+        contentColor = foreground,
+        shape = MaterialTheme.shapes.small,
+    ) {
+        Text(
+            text = "H$hour\n${displayStatus(status)}",
+            modifier = Modifier.padding(vertical = 8.dp, horizontal = 2.dp),
+            textAlign = TextAlign.Center,
+            style = MaterialTheme.typography.labelMedium,
+        )
+    }
+}
+
+@Composable
+private fun StatusLegend(code: String, label: String) {
+    Text("$code $label", style = MaterialTheme.typography.labelMedium)
+}
+
+private fun displayStatus(status: String?): String = when (status) {
+    "O" -> "OD"
+    null -> "–"
+    else -> status
+}
+
 private fun dayColumnWidth(day: com.gasczoology.varugai.data.db.TeachingDayEntity): Dp =
-    maxOf(112, 50 * day.hours).dp
+    maxOf(112, 52 * day.hours + 8).dp
