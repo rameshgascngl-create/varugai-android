@@ -1,0 +1,129 @@
+name: VARUGAI 16 Native Release Candidate
+
+on:
+  push:
+    branches: [ release/varugai-native-v16 ]
+    paths:
+      - '.github/workflows/native-release-candidate.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  release-candidate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: gradle
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '8.13'
+
+      - uses: android-actions/setup-android@v4
+
+      - name: Install Android 36 SDK
+        run: yes | sdkmanager "platforms;android-36" "build-tools;35.0.0"
+
+      - name: Create Gradle wrapper
+        run: gradle wrapper --gradle-version 8.13
+
+      - name: Validate Gradle wrapper
+        uses: gradle/actions/wrapper-validation@v4
+
+      - name: Run native architecture and phase audits
+        run: |
+          ./tools/audit-native-architecture.sh
+          ./tools/audit-phase2-roster.sh
+          ./tools/audit-phase3-grid.sh
+          ./tools/audit-phase4-summary.sh
+          ./tools/audit-phase5-export.sh
+
+      - name: Unit tests and lint
+        run: |
+          ./gradlew --no-daemon testDebugUnitTest
+          ./gradlew --no-daemon lintDebug
+
+      - name: Require production signing secrets
+        env:
+          KS: ${{ secrets.VARUGAI_KEYSTORE_BASE64 }}
+          KSPW: ${{ secrets.VARUGAI_KEYSTORE_PASSWORD }}
+          KSA: ${{ secrets.VARUGAI_KEY_ALIAS }}
+          KSPASS: ${{ secrets.VARUGAI_KEY_PASSWORD }}
+        run: |
+          test -n "$KS"
+          test -n "$KSPW"
+          test -n "$KSA"
+          test -n "$KSPASS"
+
+      - name: Decode and verify release keystore
+        env:
+          VARUGAI_KEYSTORE_BASE64: ${{ secrets.VARUGAI_KEYSTORE_BASE64 }}
+          VARUGAI_KEYSTORE_PASSWORD: ${{ secrets.VARUGAI_KEYSTORE_PASSWORD }}
+          VARUGAI_KEY_ALIAS: ${{ secrets.VARUGAI_KEY_ALIAS }}
+        run: |
+          echo "$VARUGAI_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/varugai-release.jks"
+          echo "VARUGAI_KEYSTORE_PATH=$RUNNER_TEMP/varugai-release.jks" >> "$GITHUB_ENV"
+          keytool -list -v -keystore "$RUNNER_TEMP/varugai-release.jks"             -storepass "$VARUGAI_KEYSTORE_PASSWORD" -alias "$VARUGAI_KEY_ALIAS"             | tee keystore-cert.txt
+          EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
+          ACTUAL=$(grep 'SHA256:' keystore-cert.txt | head -1 | sed 's/.*SHA256: *//' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
+          echo "Expected signer: $EXPECTED"
+          echo "Actual signer:   $ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+
+      - name: Build signed native APK and AAB
+        env:
+          VARUGAI_KEYSTORE_PASSWORD: ${{ secrets.VARUGAI_KEYSTORE_PASSWORD }}
+          VARUGAI_KEY_ALIAS: ${{ secrets.VARUGAI_KEY_ALIAS }}
+          VARUGAI_KEY_PASSWORD: ${{ secrets.VARUGAI_KEY_PASSWORD }}
+        run: ./gradlew --no-daemon clean assembleRelease bundleRelease
+
+      - name: Verify release APK architecture and signature
+        run: |
+          mkdir -p out
+          V=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          AAB=$(find app/build/outputs/bundle/release -name '*.aab' | head -1)
+          test -n "$APK"
+          test -n "$AAB"
+          cp "$APK" "out/VARUGAI-$V-release.apk"
+          cp "$AAB" "out/VARUGAI-$V-release.aab"
+          echo "VER=$V" >> "$GITHUB_ENV"
+
+          unzip -l "out/VARUGAI-$V-release.apk" | tee out/apk-file-list.txt
+          ! grep -Ei 'assets/.*\.(html|js|css)$' out/apk-file-list.txt
+          ! grep -Ei 'assets/(index\.html|app\.js|styles\.css)' out/apk-file-list.txt
+
+          if unzip -p "out/VARUGAI-$V-release.apk" classes.dex 2>/dev/null | strings |              grep -E 'WebViewAssetLoader|appassets\.androidplatform\.net|android\.webkit\.WebView|android.permission.CAMERA|androidx\.camera|ACTION_IMAGE_CAPTURE'; then
+            echo "Forbidden legacy web/camera reference detected in release APK"
+            exit 1
+          fi
+
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/apksigner" verify --verbose --print-certs "out/VARUGAI-$V-release.apk" | tee out/apksigner.txt
+          EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
+          ACTUAL=$(grep 'Signer #1 certificate SHA-256 digest:' out/apksigner.txt | head -1 | awk -F': ' '{print $2}' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
+          echo "APK signer: $ACTUAL"
+          test "$ACTUAL" = "$EXPECTED"
+
+      - name: Checksums
+        run: |
+          cd out
+          sha256sum *.apk *.aab | tee SHA256SUMS.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VARUGAI-${{ env.VER }}-native-release-candidate
+          path: |
+            out/VARUGAI-*.apk
+            out/VARUGAI-*.aab
+            out/SHA256SUMS.txt
+            out/apksigner.txt
+            out/apk-file-list.txt
+            keystore-cert.txt
