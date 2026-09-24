@@ -88,6 +88,7 @@ jobs:
           done < <(unzip -Z1 "$APK" | grep -E '^classes([0-9]*)?\.dex$')
           ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' release-dex-strings.txt
           ! grep -Fq 'data/repository/VarugaiRepository' release-dex-strings.txt
+          ! grep -Eq 'NotificationManagerCompat|android/app/AlarmManager|SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|RECEIVE_BOOT_COMPLETED' release-dex-strings.txt
 
       - name: Verify debug APK has no legacy renderer
         run: |
