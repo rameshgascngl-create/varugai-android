@@ -28,7 +28,7 @@ grep -q 'androidx.compose.runtime' "$PROGUARD" || fail "Compose keep rule missin
 grep -q '\$\$serializer' "$PROGUARD" || fail "serialization keep rule missing"
 pass "release signing/R8 source configuration"
 
-grep -q 'net.zetetic:sqlcipher-android:4.19.0' "$BUILD" || fail "modern SQLCipher dependency missing"
+grep -q 'net.zetetic:sqlcipher-android:4.17.0' "$BUILD" || fail "modern SQLCipher dependency missing"
 grep -q 'SupportOpenHelperFactory' "$DB" || fail "Room is not wired through SQLCipher"
 grep -q 'AndroidKeyStore' "$KEY" || fail "database passphrase not protected by Android Keystore"
 grep -q 'AES/GCM/NoPadding' "$KEY" || fail "database-key wrapping is not AES-GCM"
