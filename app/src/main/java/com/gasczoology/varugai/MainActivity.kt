@@ -36,6 +36,8 @@ import com.gasczoology.varugai.ui.roster.RosterScreen
 import com.gasczoology.varugai.ui.roster.RosterViewModel
 import com.gasczoology.varugai.ui.setup.SetupScreen
 import com.gasczoology.varugai.ui.setup.SetupViewModel
+import com.gasczoology.varugai.ui.summary.SummaryScreen
+import com.gasczoology.varugai.ui.summary.SummaryViewModel
 import com.gasczoology.varugai.ui.theme.VarugaiTheme
 
 class MainActivity : ComponentActivity() {
@@ -53,7 +55,10 @@ class MainActivity : ComponentActivity() {
                 val gridViewModel: GridViewModel = viewModel(
                     factory = GridViewModel.Factory(app.repository, app.preferences)
                 )
-                VarugaiApp(setupViewModel, rosterViewModel, gridViewModel)
+                val summaryViewModel: SummaryViewModel = viewModel(
+                    factory = SummaryViewModel.Factory(app.repository, app.preferences)
+                )
+                VarugaiApp(setupViewModel, rosterViewModel, gridViewModel, summaryViewModel)
             }
         }
     }
@@ -65,6 +70,7 @@ private fun VarugaiApp(
     setupViewModel: SetupViewModel,
     rosterViewModel: RosterViewModel,
     gridViewModel: GridViewModel,
+    summaryViewModel: SummaryViewModel,
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
@@ -72,6 +78,7 @@ private fun VarugaiApp(
     val setupState by setupViewModel.uiState.collectAsStateWithLifecycle()
     val rosterState by rosterViewModel.uiState.collectAsStateWithLifecycle()
     val gridState by gridViewModel.uiState.collectAsStateWithLifecycle()
+    val summaryState by summaryViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(setupState.message) {
         setupState.message?.let {
@@ -178,7 +185,14 @@ private fun VarugaiApp(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            composable(VarugaiDestination.Summary.route) { PhasePlaceholder("Summary", "Phase 4") }
+            composable(VarugaiDestination.Summary.route) {
+                SummaryScreen(
+                    state = summaryState,
+                    onFilter = summaryViewModel::setFilter,
+                    onQuery = summaryViewModel::setQuery,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
             composable(VarugaiDestination.Export.route) { PhasePlaceholder("Export", "Phase 5") }
         }
     }
