@@ -30,6 +30,8 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.gasczoology.varugai.ui.grid.GridScreen
+import com.gasczoology.varugai.ui.export.ExportScreen
+import com.gasczoology.varugai.ui.export.ExportViewModel
 import com.gasczoology.varugai.ui.grid.GridViewModel
 import com.gasczoology.varugai.ui.navigation.VarugaiDestination
 import com.gasczoology.varugai.ui.roster.RosterScreen
@@ -58,7 +60,10 @@ class MainActivity : ComponentActivity() {
                 val summaryViewModel: SummaryViewModel = viewModel(
                     factory = SummaryViewModel.Factory(app.repository, app.preferences)
                 )
-                VarugaiApp(setupViewModel, rosterViewModel, gridViewModel, summaryViewModel)
+                val exportViewModel: ExportViewModel = viewModel(
+                    factory = ExportViewModel.Factory(app.repository, app.preferences)
+                )
+                VarugaiApp(setupViewModel, rosterViewModel, gridViewModel, summaryViewModel, exportViewModel)
             }
         }
     }
@@ -71,6 +76,7 @@ private fun VarugaiApp(
     rosterViewModel: RosterViewModel,
     gridViewModel: GridViewModel,
     summaryViewModel: SummaryViewModel,
+    exportViewModel: ExportViewModel,
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
@@ -79,6 +85,7 @@ private fun VarugaiApp(
     val rosterState by rosterViewModel.uiState.collectAsStateWithLifecycle()
     val gridState by gridViewModel.uiState.collectAsStateWithLifecycle()
     val summaryState by summaryViewModel.uiState.collectAsStateWithLifecycle()
+    val exportState by exportViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(setupState.message) {
         setupState.message?.let {
@@ -96,6 +103,12 @@ private fun VarugaiApp(
         gridState.message?.let {
             snackbar.showSnackbar(it)
             gridViewModel.clearMessage()
+        }
+    }
+    LaunchedEffect(exportState.message) {
+        exportState.message?.let {
+            snackbar.showSnackbar(it)
+            exportViewModel.clearMessage()
         }
     }
 
@@ -193,7 +206,17 @@ private fun VarugaiApp(
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            composable(VarugaiDestination.Export.route) { PhasePlaceholder("Export", "Phase 5") }
+            composable(VarugaiDestination.Export.route) {
+                ExportScreen(
+                    state = exportState,
+                    onPreviewRestore = exportViewModel::previewRestore,
+                    onCancelRestore = exportViewModel::cancelRestore,
+                    onCommitRestore = exportViewModel::commitRestore,
+                    onCreateBackup = exportViewModel::nativeBackupText,
+                    onNotify = exportViewModel::notify,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
         }
     }
 }
