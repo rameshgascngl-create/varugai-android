@@ -57,14 +57,63 @@ jobs:
       - name: Native UX hardening audit
         run: ./tools/audit-native-ux-hardening.sh
 
+      - name: Required corrections source audit
+        run: ./tools/audit-required-corrections.sh
+
       - name: Unit tests
         run: ./gradlew --no-daemon testDebugUnitTest
 
       - name: Lint
-        run: ./gradlew --no-daemon lintDebug
+        run: ./gradlew --no-daemon lintDebug lintRelease
 
-      - name: Compile Phase-5 native debug APK
-        run: ./gradlew --no-daemon assembleDebug
+      - name: Compile native debug and unsigned release audit APKs
+        run: ./gradlew --no-daemon assembleDebug assembleRelease
+
+      - name: Audit release variant
+        run: |
+          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          test -n "$APK"
+          unzip -l "$APK" | tee release-apk-file-list.txt
+          grep -q 'libsqlcipher.so' release-apk-file-list.txt
+
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/aapt" dump xmltree "$APK" AndroidManifest.xml | tee release-manifest.txt
+          ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' release-manifest.txt
+          ! grep -q 'androidx.compose.ui.tooling.PreviewActivity' release-manifest.txt
+          ! grep -q 'androidx.activity.ComponentActivity' release-manifest.txt
+
+          : > release-dex-strings.txt
+          while read -r dex; do
+            unzip -p "$APK" "$dex" | strings >> release-dex-strings.txt
+          done < <(unzip -Z1 "$APK" | grep -E '^classes([0-9]*)?\.dex
+      - name: Verify debug APK has no legacy renderer
+        run: |
+          APK=$(find app/build/outputs/apk/debug -name '*.apk' | head -1)
+          test -n "$APK"
+          unzip -l "$APK" | tee apk-file-list.txt
+          ! grep -Ei 'assets/.*\.(html|js|css)$' apk-file-list.txt
+          ! grep -Ei 'assets/(index\.html|app\.js|styles\.css)' apk-file-list.txt
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: VARUGAI-16.0.0-phase5-debug
+          path: |
+            app/build/outputs/apk/debug/*.apk
+            app/build/reports/tests/
+            app/build/reports/lint-results-debug.html
+            apk-file-list.txt
+            release-apk-file-list.txt
+            release-manifest.txt
+            release-dex-strings.txt
+            PHASE1_NATIVE_IMPLEMENTATION_REPORT.md
+            PHASE2_NATIVE_IMPLEMENTATION_REPORT.md
+            PHASE3_NATIVE_IMPLEMENTATION_REPORT.md
+            PHASE4_NATIVE_IMPLEMENTATION_REPORT.md
+            PHASE5_NATIVE_IMPLEMENTATION_REPORT.md
+            DEVICE_QA_NATIVE_V16.md
+)
+          ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' release-dex-strings.txt
+          ! grep -Fq 'data/repository/VarugaiRepository' release-dex-strings.txt
 
       - name: Verify APK has no legacy renderer
         run: |
