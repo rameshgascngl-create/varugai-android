@@ -78,3 +78,41 @@ Only after every applicable item passes:
 3. produce the signed APK/AAB with the existing production keystore;
 4. verify package identity and signing-certificate SHA-256;
 5. then merge/promote and resubmit to the store.
+
+
+## Required security verification before any wider distribution
+
+### Release signing
+- Build only the release candidate with the existing VARUGAI production/upload keystore.
+- Run `apksigner verify --verbose --print-certs <apk>`.
+- PASS only if signer SHA-256 is `A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B`.
+- FAIL if the signer is Android Debug or if the release manifest is debuggable.
+
+### SQLCipher database-at-rest check
+- Use a debug/root-enabled test device or emulator solely for this verification.
+- Create attendance data, close the app, then pull `/data/data/com.gasczoology.varugai/databases/varugai.db` (or the debug-suffixed package equivalent).
+- Confirm the file header is not `SQLite format 3`.
+- Attempt to open it with a plain SQLite browser/CLI without the key; PASS only if it fails as a normal SQLite database.
+- Reopen VARUGAI and confirm the same data remains readable through the app.
+
+### App lock
+- Cold-start the app: no register/roster/grid content may appear before PIN setup/unlock.
+- Configure each supported timeout at least once; retain one practical setting for final QA.
+- Background the unlocked app for less than the timeout: returning may remain unlocked.
+- Background it for longer than the timeout: returning must show the lock screen before any attendance data is visible.
+- Kill the process and relaunch: the app must start locked.
+
+### FLAG_SECURE
+- Attempt a screenshot on Roster and Grid.
+- Attempt screen recording if available.
+- PASS only if Android blocks the capture or the captured content is blank/black.
+
+### Manifest/R8
+- Inspect the release manifest dump: `debuggable` must be false; `androidx.compose.ui.tooling.PreviewActivity` and `androidx.activity.ComponentActivity` must not be exported app components.
+- Inspect release DEX strings: `data/repository/VarugaiRepository` must not remain as a readable app class path.
+- Confirm `libsqlcipher.so` is packaged in the release APK.
+
+### Scope decisions
+- Notifications/reminders are not part of 16.0.0; no notification/alarm permission or app-owned scheduling code is expected.
+- Scan verification is roster-import validation only; no camera/QR workflow is expected.
+- Sync is offline-only manual export/import; no network sync is expected.
