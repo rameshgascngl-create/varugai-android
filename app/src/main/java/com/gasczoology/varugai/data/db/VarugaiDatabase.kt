@@ -36,7 +36,7 @@ abstract class VarugaiDatabase : RoomDatabase() {
 
         fun create(context: Context): VarugaiDatabase {
             System.loadLibrary("sqlcipher")
-            val passphrase = DatabaseKeyManager(context.applicationContext).getOrCreatePassphrase()
+            val passphrase = DatabaseKeyManager().getOrCreatePassphrase()
             val factory = SupportOpenHelperFactory(passphrase)
             return Room.databaseBuilder(
                 context.applicationContext,
