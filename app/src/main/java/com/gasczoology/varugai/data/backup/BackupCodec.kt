@@ -282,8 +282,13 @@ object BackupCodec {
             .joinToString("") { (it.toInt() and 0xff).toString(16).padStart(2, '0') }
 
     private fun extractDataValue(raw: String): String {
-        val match = Regex("\\"data\\"\\s*:").find(raw) ?: error("Backup data field not found.")
-        var i = match.range.last + 1
+        val marker = "\"data\""
+        val markerIndex = raw.indexOf(marker)
+        require(markerIndex >= 0) { "Backup data field not found." }
+        var i = markerIndex + marker.length
+        while (i < raw.length && raw[i].isWhitespace()) i++
+        require(i < raw.length && raw[i] == ':') { "Backup data field is malformed." }
+        i++
         while (i < raw.length && raw[i].isWhitespace()) i++
         require(i < raw.length && (raw[i] == '{' || raw[i] == '[')) { "Backup data field is malformed." }
         val open = raw[i]
