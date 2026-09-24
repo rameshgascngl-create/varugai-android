@@ -31,6 +31,7 @@ import com.gasczoology.varugai.data.db.StudentEntity
 import com.gasczoology.varugai.data.export.RosterXlsxExporter
 import com.gasczoology.varugai.data.importer.RosterFileParser
 import com.gasczoology.varugai.domain.roster.RosterImportRow
+import com.gasczoology.varugai.ui.common.displayDate
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -54,6 +55,7 @@ fun RosterScreen(
     var pasteOpen by remember { mutableStateOf(false) }
     var pasteText by remember { mutableStateOf("") }
     var localError by remember { mutableStateOf<String?>(null) }
+    var pendingRemove by remember { mutableStateOf<StudentEntity?>(null) }
 
     val openDocument = rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
         if (uri != null) scope.launch {
@@ -105,12 +107,12 @@ fun RosterScreen(
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
                     Text("${student.roll}  ${student.name}")
                     if (student.registerNumber.isNotBlank()) Text("Reg. No: ${student.registerNumber}")
-                    if (student.admissionDate.isNotBlank() || student.attendanceEndDate.isNotBlank()) Text("Counts ${student.admissionDate.ifBlank { "from course start" }} → ${student.attendanceEndDate.ifBlank { "course end" }}")
+                    if (student.admissionDate.isNotBlank() || student.attendanceEndDate.isNotBlank()) Text("Counts ${student.admissionDate.takeIf(String::isNotBlank)?.let(::displayDate) ?: "from course start"} → ${student.attendanceEndDate.takeIf(String::isNotBlank)?.let(::displayDate) ?: "course end"}")
                     Row(horizontalArrangement = Arrangement.spacedBy(4.dp)) {
                         TextButton(onClick = { onMove(student, -1) }, enabled = index > 0) { Text("↑") }
                         TextButton(onClick = { onMove(student, 1) }, enabled = index < state.students.lastIndex) { Text("↓") }
                         TextButton(onClick = { showEditor = student }) { Text("Edit") }
-                        TextButton(onClick = { onDelete(student) }) { Text("Remove") }
+                        TextButton(onClick = { pendingRemove = student }) { Text("Remove") }
                     }
                 }
             }
@@ -140,6 +142,21 @@ fun RosterScreen(
                 }) { Text("Preview") }
             },
             dismissButton = { TextButton(onClick = { pasteOpen = false }) { Text("Cancel") } },
+        )
+    }
+
+    pendingRemove?.let { student ->
+        AlertDialog(
+            onDismissRequest = { pendingRemove = null },
+            title = { Text("Remove student?") },
+            text = { Text("Remove ${student.roll} · ${student.name} from this roster? If attendance already exists, VARUGAI will block the deletion to protect the record.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    pendingRemove = null
+                    onDelete(student)
+                }) { Text("Remove") }
+            },
+            dismissButton = { TextButton(onClick = { pendingRemove = null }) { Text("Cancel") } },
         )
     }
 
