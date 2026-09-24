@@ -44,6 +44,7 @@ jobs:
           ./tools/audit-phase3-grid.sh
           ./tools/audit-phase4-summary.sh
           ./tools/audit-phase5-export.sh
+          ./tools/audit-native-ux-hardening.sh
 
       - name: Unit tests and lint
         run: |
@@ -127,3 +128,4 @@ jobs:
             out/apksigner.txt
             out/apk-file-list.txt
             keystore-cert.txt
+            DEVICE_QA_NATIVE_V16.md
