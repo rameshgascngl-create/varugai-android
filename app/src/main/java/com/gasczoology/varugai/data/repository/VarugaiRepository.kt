@@ -123,6 +123,7 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
                 date = date.plusDays(1)
             }
         }
+        db.attendanceMarkDao().deleteOutsideDateRange(register.id, start.toString(), end.toString())
         db.teachingDayDao().deleteForRegister(register.id)
         db.teachingDayDao().upsertAll(generated)
         db.registerDao().upsert(register.copy(calendarWeekdaysCsv = weekdays.sorted().joinToString(","), updatedAt = System.currentTimeMillis()))
@@ -137,6 +138,8 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
     }
 
     suspend fun updateTeachingDay(day: TeachingDayEntity) = db.withTransaction {
+        require(day.hours in 1..8) { "Hours must be between 1 and 8" }
+        db.attendanceMarkDao().deleteHoursAbove(day.registerId, day.date, day.hours)
         db.teachingDayDao().upsertAll(listOf(day))
         db.auditEventDao().insert(
             AuditEventEntity(
@@ -166,6 +169,7 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
             isComplete = false,
             note = "Special working day",
         )
+        db.attendanceMarkDao().deleteHoursAbove(registerId, date, hours)
         db.teachingDayDao().upsertAll(listOf(day))
         db.auditEventDao().insert(
             AuditEventEntity(
