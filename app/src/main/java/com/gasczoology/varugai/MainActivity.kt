@@ -29,6 +29,8 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.gasczoology.varugai.ui.grid.GridScreen
+import com.gasczoology.varugai.ui.grid.GridViewModel
 import com.gasczoology.varugai.ui.navigation.VarugaiDestination
 import com.gasczoology.varugai.ui.roster.RosterScreen
 import com.gasczoology.varugai.ui.roster.RosterViewModel
@@ -48,7 +50,10 @@ class MainActivity : ComponentActivity() {
                 val rosterViewModel: RosterViewModel = viewModel(
                     factory = RosterViewModel.Factory(app.repository, app.preferences)
                 )
-                VarugaiApp(setupViewModel, rosterViewModel)
+                val gridViewModel: GridViewModel = viewModel(
+                    factory = GridViewModel.Factory(app.repository, app.preferences)
+                )
+                VarugaiApp(setupViewModel, rosterViewModel, gridViewModel)
             }
         }
     }
@@ -56,12 +61,17 @@ class MainActivity : ComponentActivity() {
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-private fun VarugaiApp(setupViewModel: SetupViewModel, rosterViewModel: RosterViewModel) {
+private fun VarugaiApp(
+    setupViewModel: SetupViewModel,
+    rosterViewModel: RosterViewModel,
+    gridViewModel: GridViewModel,
+) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
     val snackbar = remember { SnackbarHostState() }
     val setupState by setupViewModel.uiState.collectAsStateWithLifecycle()
     val rosterState by rosterViewModel.uiState.collectAsStateWithLifecycle()
+    val gridState by gridViewModel.uiState.collectAsStateWithLifecycle()
 
     LaunchedEffect(setupState.message) {
         setupState.message?.let {
@@ -73,6 +83,12 @@ private fun VarugaiApp(setupViewModel: SetupViewModel, rosterViewModel: RosterVi
         rosterState.message?.let {
             snackbar.showSnackbar(it)
             rosterViewModel.clearMessage()
+        }
+    }
+    LaunchedEffect(gridState.message) {
+        gridState.message?.let {
+            snackbar.showSnackbar(it)
+            gridViewModel.clearMessage()
         }
     }
 
@@ -143,7 +159,25 @@ private fun VarugaiApp(setupViewModel: SetupViewModel, rosterViewModel: RosterVi
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
-            composable(VarugaiDestination.Grid.route) { PhasePlaceholder("Grid", "Phase 3") }
+            composable(VarugaiDestination.Grid.route) {
+                GridScreen(
+                    state = gridState,
+                    onSelectDate = gridViewModel::selectDate,
+                    onPreviousDate = gridViewModel::previousDate,
+                    onNextDate = gridViewModel::nextDate,
+                    onToday = gridViewModel::jumpToday,
+                    onSetWindowSize = gridViewModel::setWindowSize,
+                    onFilter = gridViewModel::setFilter,
+                    onQuery = gridViewModel::setQuery,
+                    onCycleMark = gridViewModel::cycleMark,
+                    onAllPresent = gridViewModel::allPresent,
+                    onClearDay = gridViewModel::clearDay,
+                    onClearHour = gridViewModel::clearHour,
+                    onToggleComplete = gridViewModel::toggleComplete,
+                    onUndo = gridViewModel::undo,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
             composable(VarugaiDestination.Summary.route) { PhasePlaceholder("Summary", "Phase 4") }
             composable(VarugaiDestination.Export.route) { PhasePlaceholder("Export", "Phase 5") }
         }
