@@ -1,4 +1,5 @@
 name: VARUGAI 16 Native Release Candidate
+# Trigger release-candidate validation on current native branch HEAD
 
 on:
   push:
