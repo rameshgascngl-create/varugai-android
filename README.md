@@ -33,7 +33,7 @@ The production release workflow is intentionally locked. It may be enabled only 
 
 - **Release signing:** production updates must use the existing VARUGAI production/upload key. Do not generate a replacement key for this package. CI rejects any release whose signer SHA-256 is not `A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B`.
 - **Release hardening:** the release build is non-debuggable, R8/minification and resource shrinking are mandatory, and production signing credentials are supplied only through local ignored properties or CI secrets.
-- **Database at rest:** Room is backed by SQLCipher. The SQLCipher passphrase is random and stored only after AES-GCM wrapping with a non-exportable Android Keystore key.
+- **Database at rest:** Room is backed by SQLCipher. The SQLCipher passphrase is derived at runtime by HMAC-SHA256 from a non-exportable Android Keystore key; no reusable database password is hardcoded or stored in app files.
 - **App access lock:** cold start is PIN-gated. Returning from background after the user-selected timeout (15 s, 30 s, 1 min, 5 min, or 15 min) re-locks the app. The PIN verifier is protected by a non-exportable Android Keystore HMAC key.
 - **Screen capture:** `FLAG_SECURE` is applied at the activity level so roster, grid, summary, and export data are not available to screenshots/screen recording.
 - **Notifications/reminders:** not a VARUGAI 16.0.0 feature. There is no app-owned `NotificationManagerCompat`, `AlarmManager`, exact-alarm permission, boot receiver, or reminder workflow. Do not add notification/alarm permissions merely because dependency classes appear in a debug DEX.
