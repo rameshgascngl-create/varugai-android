@@ -165,7 +165,8 @@ fun RosterScreen(
             onDismissRequest = onCancelImport,
             title = { Text(if (plan.isBlocked) "Roster import blocked" else "Confirm roster replacement") },
             text = { Column(verticalArrangement = Arrangement.spacedBy(6.dp)) {
-                Text("New roster: ${plan.students.size} student(s).")
+                Text("Current roster: ${plan.existingCount} · incoming roster: ${plan.incomingCount}.")
+                if (plan.sizeDelta != 0) Text("Roster size changes by ${if (plan.sizeDelta > 0) "+" else ""}${plan.sizeDelta}; review additions/omissions before commit.")
                 if (plan.rollChanges.isNotEmpty()) Text("${plan.rollChanges.size} roll-number correction(s) preserve attendance by stable ID.")
                 if (plan.omittedWithoutAttendance.isNotEmpty()) Text("${plan.omittedWithoutAttendance.size} unmarked omitted student(s) will be removed.")
                 if (plan.omittedWithAttendance.isNotEmpty()) Text("${plan.omittedWithAttendance.size} omitted student(s) already have attendance. Import is blocked to prevent data loss.")
