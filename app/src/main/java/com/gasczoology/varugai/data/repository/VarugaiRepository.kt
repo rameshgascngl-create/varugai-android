@@ -386,6 +386,7 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         val idsWithAttendance = db.attendanceMarkDao().getStudentIdsWithAttendance(registerId).toSet()
         RosterImportPlan(
             registerId = registerId,
+            existingCount = existing.size,
             students = mapped,
             rollChanges = changes,
             omittedWithoutAttendance = omitted.filter { it.sid !in idsWithAttendance },
