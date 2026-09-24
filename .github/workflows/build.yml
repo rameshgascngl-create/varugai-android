@@ -44,13 +44,16 @@ jobs:
       - name: Phase 3 grid source audit
         run: ./tools/audit-phase3-grid.sh
 
+      - name: Phase 4 summary source audit
+        run: ./tools/audit-phase4-summary.sh
+
       - name: Unit tests
         run: ./gradlew --no-daemon testDebugUnitTest
 
       - name: Lint
         run: ./gradlew --no-daemon lintDebug
 
-      - name: Compile Phase-3 native debug APK
+      - name: Compile Phase-4 native debug APK
         run: ./gradlew --no-daemon assembleDebug
 
       - name: Verify APK has no legacy renderer
@@ -63,7 +66,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: VARUGAI-16.0.0-phase3-debug
+          name: VARUGAI-16.0.0-phase4-debug
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/
@@ -72,3 +75,4 @@ jobs:
             PHASE1_NATIVE_IMPLEMENTATION_REPORT.md
             PHASE2_NATIVE_IMPLEMENTATION_REPORT.md
             PHASE3_NATIVE_IMPLEMENTATION_REPORT.md
+            PHASE4_NATIVE_IMPLEMENTATION_REPORT.md
