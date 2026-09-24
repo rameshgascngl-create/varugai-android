@@ -1,74 +1,19 @@
-name: Android release
+name: VARUGAI Native Production Release — LOCKED
 
+# Production release stays manual and must not be used until all native phases,
+# legacy restore, signing verification and physical-device QA are complete.
 on:
   workflow_dispatch:
-  push:
-    branches: [ main, claude/varugai-android-release ]
-    tags: [ 'v*' ]
 
 permissions:
   contents: read
 
 jobs:
-  release:
+  locked:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-          cache: gradle
-
-      - uses: android-actions/setup-android@v3
-
-      - name: Attendance logic tests (release blocking)
-        run: node tests/attendance.test.js
-
-      - name: Create the Gradle wrapper
-        run: gradle wrapper --gradle-version 8.7
-
-      - name: Validate the Gradle wrapper
-        uses: gradle/actions/wrapper-validation@v3
-
-      - name: Decode the release keystore
-        if: ${{ secrets.VARUGAI_KEYSTORE_BASE64 != '' }}
+      - name: Release gate intentionally locked during native migration
         run: |
-          echo "${{ secrets.VARUGAI_KEYSTORE_BASE64 }}" | base64 -d > "$RUNNER_TEMP/varugai-release.jks"
-          echo "VARUGAI_KEYSTORE_PATH=$RUNNER_TEMP/varugai-release.jks" >> "$GITHUB_ENV"
-
-      - name: Build release APK and AAB
-        env:
-          VARUGAI_KEYSTORE_PASSWORD: ${{ secrets.VARUGAI_KEYSTORE_PASSWORD }}
-          VARUGAI_KEY_ALIAS:         ${{ secrets.VARUGAI_KEY_ALIAS }}
-          VARUGAI_KEY_PASSWORD:      ${{ secrets.VARUGAI_KEY_PASSWORD }}
-        run: ./gradlew --no-daemon assembleRelease bundleRelease
-
-      - name: Name the artefacts
-        run: |
-          mkdir -p out
-          V=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
-          cp app/build/outputs/apk/release/*.apk    "out/VARUGAI-$V-release.apk"
-          cp app/build/outputs/bundle/release/*.aab "out/VARUGAI-$V-release.aab"
-          echo "VER=$V" >> "$GITHUB_ENV"
-
-      - name: Verify the APK signature
-        run: |
-          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
-          echo "--- apksigner verify ---"
-          "$BT/apksigner" verify --verbose --print-certs "out/VARUGAI-$VER-release.apk" | tee out/apksigner.txt
-          grep -q "Verified using v2 scheme (APK Signature Scheme v2): true" out/apksigner.txt
-
-      - name: Checksums
-        run: |
-          cd out && sha256sum *.apk *.aab | tee SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: VARUGAI-${{ env.VER }}-release
-          path: |
-            out/*.apk
-            out/*.aab
-            out/SHA256SUMS.txt
-            out/apksigner.txt
+          echo "VARUGAI 16 production release is locked."
+          echo "Complete Phases 3–5, legacy import tests, release signing and device QA before enabling this workflow."
+          exit 1

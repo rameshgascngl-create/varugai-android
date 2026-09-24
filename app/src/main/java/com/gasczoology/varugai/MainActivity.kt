@@ -1,222 +1,158 @@
 package com.gasczoology.varugai
 
-import android.annotation.SuppressLint
-import android.app.Activity
-import android.content.Intent
-import android.net.Uri
 import android.os.Bundle
-import android.print.PrintAttributes
-import android.print.PrintManager
-import android.util.Base64
-import android.view.Menu
-import android.view.MenuItem
-import android.webkit.JavascriptInterface
-import android.webkit.ValueCallback
-import android.webkit.WebChromeClient
-import android.webkit.WebResourceRequest
-import android.webkit.WebResourceResponse
-import android.webkit.WebSettings
-import android.webkit.WebView
-import android.widget.Toast
-import androidx.activity.OnBackPressedCallback
-import androidx.activity.result.contract.ActivityResultContracts
-import androidx.appcompat.app.AlertDialog
-import androidx.appcompat.app.AppCompatActivity
-import androidx.webkit.WebViewAssetLoader
-import androidx.webkit.WebViewClientCompat
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.Icon
+import androidx.compose.material3.NavigationBar
+import androidx.compose.material3.NavigationBarItem
+import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.Text
+import androidx.compose.material3.TopAppBar
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.unit.dp
+import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavDestination.Companion.hierarchy
+import androidx.navigation.compose.NavHost
+import androidx.navigation.compose.composable
+import androidx.navigation.compose.currentBackStackEntryAsState
+import androidx.navigation.compose.rememberNavController
+import com.gasczoology.varugai.ui.navigation.VarugaiDestination
+import com.gasczoology.varugai.ui.roster.RosterScreen
+import com.gasczoology.varugai.ui.roster.RosterViewModel
+import com.gasczoology.varugai.ui.setup.SetupScreen
+import com.gasczoology.varugai.ui.setup.SetupViewModel
+import com.gasczoology.varugai.ui.theme.VarugaiTheme
 
-class MainActivity : AppCompatActivity() {
-
-    private lateinit var web: WebView
-    private var fileCallback: ValueCallback<Array<Uri>>? = null
-    private var pendingBytes: ByteArray? = null
-
-    private val chooser = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val cb = fileCallback ?: return@registerForActivityResult
-        fileCallback = null
-        val uris: Array<Uri>? = when {
-            result.resultCode != Activity.RESULT_OK -> null
-            result.data?.data != null -> arrayOf(result.data!!.data!!)
-            result.data?.clipData != null -> {
-                val clip = result.data!!.clipData!!
-                Array(clip.itemCount) { clip.getItemAt(it).uri }
-            }
-            else -> null
-        }
-        cb.onReceiveValue(uris)
-    }
-
-    private val saveAs = registerForActivityResult(
-        ActivityResultContracts.StartActivityForResult()
-    ) { result ->
-        val bytes = pendingBytes
-        pendingBytes = null
-        val uri = result.data?.data
-        if (result.resultCode != Activity.RESULT_OK || uri == null || bytes == null) return@registerForActivityResult
-        try {
-            contentResolver.openOutputStream(uri)?.use { it.write(bytes) }
-                ?: throw IllegalStateException("no output stream")
-            toast(getString(R.string.saved_ok))
-        } catch (e: Exception) {
-            toast(getString(R.string.save_failed) + ": " + e.message)
-        }
-    }
-
-    @SuppressLint("SetJavaScriptEnabled")
+class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        WebView.setWebContentsDebuggingEnabled(BuildConfig.DEBUG)
-        val loader = WebViewAssetLoader.Builder()
-            .setDomain("appassets.androidplatform.net")
-            .addPathHandler("/assets/", WebViewAssetLoader.AssetsPathHandler(this))
-            .build()
-        supportActionBar?.title = getString(R.string.app_name)
-        supportActionBar?.subtitle = "Attendance ledger"
-        web = WebView(this)
-        setContentView(web)
-        web.settings.apply {
-            javaScriptEnabled = true
-            domStorageEnabled = true
-            databaseEnabled = true
-            allowFileAccess = false
-            allowContentAccess = false
-            mixedContentMode = WebSettings.MIXED_CONTENT_NEVER_ALLOW
-            setSupportMultipleWindows(false)
-            loadWithOverviewMode = true
-            useWideViewPort = true
-            builtInZoomControls = true
-            displayZoomControls = false
-        }
-        web.webViewClient = object : WebViewClientCompat() {
-            override fun shouldInterceptRequest(view: WebView, request: WebResourceRequest): WebResourceResponse? =
-                loader.shouldInterceptRequest(request.url)
-            override fun shouldOverrideUrlLoading(view: WebView, request: WebResourceRequest): Boolean =
-                request.url.host != "appassets.androidplatform.net"
-        }
-        web.webChromeClient = object : WebChromeClient() {
-            override fun onShowFileChooser(
-                view: WebView,
-                callback: ValueCallback<Array<Uri>>,
-                params: FileChooserParams
-            ): Boolean {
-                fileCallback?.onReceiveValue(null)
-                fileCallback = callback
-                val content = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = "*/*"
-                    val mimes = params.acceptTypes.filter { it.isNotBlank() }
-                    if (mimes.isNotEmpty()) putExtra(Intent.EXTRA_MIME_TYPES, mimes.toTypedArray())
-                }
-                return try {
-                    chooser.launch(Intent.createChooser(content, getString(R.string.pick_file))); true
-                } catch (e: Exception) {
-                    fileCallback = null; callback.onReceiveValue(null); false
-                }
+        val app = application as VarugaiApplication
+        setContent {
+            VarugaiTheme {
+                val setupViewModel: SetupViewModel = viewModel(
+                    factory = SetupViewModel.Factory(app.repository, app.preferences)
+                )
+                val rosterViewModel: RosterViewModel = viewModel(
+                    factory = RosterViewModel.Factory(app.repository, app.preferences)
+                )
+                VarugaiApp(setupViewModel, rosterViewModel)
             }
         }
-        web.addJavascriptInterface(VarugaiBridge(), "VarugaiAndroid")
-        web.addJavascriptInterface(VarugaiBridge(), "VarugaiNative")
-        if (savedInstanceState == null || web.restoreState(savedInstanceState) == null) {
-            web.loadUrl("https://appassets.androidplatform.net/assets/index.html")
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun VarugaiApp(setupViewModel: SetupViewModel, rosterViewModel: RosterViewModel) {
+    val navController = rememberNavController()
+    val backStack by navController.currentBackStackEntryAsState()
+    val snackbar = remember { SnackbarHostState() }
+    val setupState by setupViewModel.uiState.collectAsStateWithLifecycle()
+    val rosterState by rosterViewModel.uiState.collectAsStateWithLifecycle()
+
+    LaunchedEffect(setupState.message) {
+        setupState.message?.let {
+            snackbar.showSnackbar(it)
+            setupViewModel.clearMessage()
         }
-        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
-            private var armed = 0L
-            override fun handleOnBackPressed() {
-                web.evaluateJavascript(
-                    "(function(){try{return window.varugaiBack?String(window.varugaiBack()):'false'}catch(e){return 'false'}})()"
-                ) { handled ->
-                    if (handled != null && handled.contains("true")) return@evaluateJavascript
-                    if (web.canGoBack()) { web.goBack(); return@evaluateJavascript }
-                    val now = System.currentTimeMillis()
-                    if (now - armed < 2000) finish() else {
-                        armed = now
-                        toast(getString(R.string.exit_prompt))
+    }
+    LaunchedEffect(rosterState.message) {
+        rosterState.message?.let {
+            snackbar.showSnackbar(it)
+            rosterViewModel.clearMessage()
+        }
+    }
+
+    Scaffold(
+        modifier = Modifier.fillMaxSize(),
+        topBar = {
+            TopAppBar(
+                title = {
+                    androidx.compose.foundation.layout.Column {
+                        Text("VARUGAI 16")
+                        Text("Semester attendance grid", style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                     }
                 }
-            }
-        })
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menu.add(0, 1, 0, R.string.menu_print)
-        menu.add(0, 2, 1, R.string.menu_privacy)
-        menu.add(0, 3, 2, R.string.menu_about)
-        return true
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        when (item.itemId) {
-            1 -> { web.evaluateJavascript("window.VarugaiAndroid && window.VarugaiAndroid.printPage()", null); return true }
-            2 -> { web.loadUrl("https://appassets.androidplatform.net/assets/privacy.html"); return true }
-            3 -> {
-                AlertDialog.Builder(this)
-                    .setTitle(R.string.app_name)
-                    .setMessage(getString(R.string.about_body, BuildConfig.VERSION_NAME))
-                    .setPositiveButton(android.R.string.ok, null)
-                    .show()
-                return true
-            }
-        }
-        return super.onOptionsItemSelected(item)
-    }
-
-    private fun toast(msg: String) = Toast.makeText(this, msg, Toast.LENGTH_SHORT).show()
-    override fun onSaveInstanceState(outState: Bundle) {
-        super.onSaveInstanceState(outState)
-        web.saveState(outState)
-    }
-    override fun onDestroy() {
-        web.destroy()
-        super.onDestroy()
-    }
-
-    inner class VarugaiBridge {
-        private val limit = 24 * 1024 * 1024
-        private val allowedExt = setOf("xlsx", "csv", "json", "html", "txt", "pdf")
-        @JavascriptInterface fun saveBase64(name: String, data: String, mime: String) = save(name, data, mime)
-        @JavascriptInterface fun saveExcel(name: String, data: String) =
-            save(name, data, "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
-        @JavascriptInterface fun version(): String = BuildConfig.VERSION_NAME
-        @JavascriptInterface fun versionCode(): Int = BuildConfig.VERSION_CODE
-        @JavascriptInterface fun printPage() = runOnUiThread {
-            try {
-                val pm = getSystemService(PRINT_SERVICE) as PrintManager
-                val job = "VARUGAI attendance statement"
-                pm.print(job, web.createPrintDocumentAdapter(job),
-                    PrintAttributes.Builder()
-                        .setMediaSize(PrintAttributes.MediaSize.ISO_A4)
-                        .setMinMargins(PrintAttributes.Margins.NO_MARGINS)
-                        .build())
-            } catch (e: Exception) {
-                toast("Printing is unavailable on this device")
-            }
-        }
-        private fun save(name: String, data: String, mime: String) {
-            val clean = name.replace(Regex("[^A-Za-z0-9._-]"), "_").take(120)
-            val ext = clean.substringAfterLast('.', "").lowercase()
-            if (clean.isEmpty() || ext !in allowedExt) {
-                runOnUiThread { toast(getString(R.string.save_failed)) }
-                return
-            }
-            val bytes = try { Base64.decode(data, Base64.DEFAULT) } catch (e: Exception) { null }
-            if (bytes == null || bytes.size > limit) {
-                runOnUiThread { toast(getString(R.string.save_failed)) }
-                return
-            }
-            pendingBytes = bytes
-            runOnUiThread {
-                val i = Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
-                    addCategory(Intent.CATEGORY_OPENABLE)
-                    type = mime
-                    putExtra(Intent.EXTRA_TITLE, clean)
-                }
-                try { saveAs.launch(i) } catch (e: Exception) {
-                    pendingBytes = null
-                    toast(getString(R.string.save_failed))
+            )
+        },
+        snackbarHost = { SnackbarHost(snackbar) },
+        bottomBar = {
+            NavigationBar {
+                VarugaiDestination.all.forEach { destination ->
+                    val selected = backStack?.destination?.hierarchy?.any { it.route == destination.route } == true
+                    NavigationBarItem(
+                        selected = selected,
+                        onClick = {
+                            navController.navigate(destination.route) {
+                                popUpTo(VarugaiDestination.Setup.route) { saveState = true }
+                                launchSingleTop = true
+                                restoreState = true
+                            }
+                        },
+                        icon = { Icon(destination.icon, contentDescription = destination.label) },
+                        label = { Text(destination.label) },
+                    )
                 }
             }
+        },
+    ) { innerPadding ->
+        NavHost(
+            navController = navController,
+            startDestination = VarugaiDestination.Setup.route,
+            modifier = Modifier.padding(innerPadding),
+        ) {
+            composable(VarugaiDestination.Setup.route) {
+                SetupScreen(
+                    state = setupState,
+                    onSelectRegister = setupViewModel::selectRegister,
+                    onSave = setupViewModel::save,
+                    onNew = setupViewModel::newRegister,
+                    onDuplicate = setupViewModel::duplicateCurrent,
+                    onDelete = setupViewModel::deleteCurrent,
+                    onGenerateCalendar = setupViewModel::generateCalendar,
+                    onCopyCalendar = setupViewModel::copyCalendar,
+                    onUpdateTeachingDay = setupViewModel::updateTeachingDay,
+                    onAddWorkingDay = setupViewModel::addWorkingDay,
+                    onSetDayOfWeekWorking = setupViewModel::setDayOfWeekWorking,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+            composable(VarugaiDestination.Roster.route) {
+                RosterScreen(
+                    state = rosterState,
+                    onAdd = rosterViewModel::addStudent,
+                    onUpdate = rosterViewModel::updateStudent,
+                    onDelete = rosterViewModel::deleteStudent,
+                    onMove = rosterViewModel::moveStudent,
+                    onPreviewImport = rosterViewModel::previewImport,
+                    onCancelImport = rosterViewModel::cancelImport,
+                    onCommitImport = rosterViewModel::commitImport,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+            composable(VarugaiDestination.Grid.route) { PhasePlaceholder("Grid", "Phase 3") }
+            composable(VarugaiDestination.Summary.route) { PhasePlaceholder("Summary", "Phase 4") }
+            composable(VarugaiDestination.Export.route) { PhasePlaceholder("Export", "Phase 5") }
         }
+    }
+}
+
+@Composable
+private fun PhasePlaceholder(title: String, phase: String) {
+    Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+        Text("$title — scheduled for $phase")
     }
 }
