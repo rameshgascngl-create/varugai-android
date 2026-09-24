@@ -31,6 +31,8 @@ import java.time.LocalDate
 import java.time.YearMonth
 import com.gasczoology.varugai.data.db.RegisterEntity
 import com.gasczoology.varugai.data.db.TeachingDayEntity
+import com.gasczoology.varugai.ui.common.displayDate
+import com.gasczoology.varugai.ui.common.displayWeekday
 
 @Composable
 fun SetupScreen(
@@ -59,6 +61,13 @@ fun SetupScreen(
     var specialHours by remember(current.id) { mutableStateOf(current.defaultHours.toString()) }
     var holidayDate by remember(current.id) { mutableStateOf(current.startDate.ifBlank { LocalDate.now().toString() }) }
     var holidayName by remember(current.id) { mutableStateOf("") }
+    val setupDateRangeValid = remember(edit.startDate, edit.endDate) {
+        runCatching {
+            val start = LocalDate.parse(edit.startDate)
+            val end = LocalDate.parse(edit.endDate)
+            !end.isBefore(start)
+        }.getOrDefault(false)
+    }
 
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
@@ -105,6 +114,9 @@ fun SetupScreen(
                         edit = edit.copy(defaultHours = it.toInt())
                         specialHours = it
                     }
+                    if (!setupDateRangeValid && (edit.startDate.isNotBlank() || edit.endDate.isNotBlank())) {
+                        Text("End date must be the same as or later than the start date.", color = MaterialTheme.colorScheme.error)
+                    }
                 }
             }
         }
@@ -139,10 +151,10 @@ fun SetupScreen(
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { onSave(edit, weekdays) }) { Text("Save setup") }
+                        Button(onClick = { onSave(edit, weekdays) }, enabled = setupDateRangeValid) { Text("Save setup") }
                         OutlinedButton(
                             onClick = { onGenerateCalendar(edit, weekdays) },
-                            enabled = edit.startDate.isNotBlank() && edit.endDate.isNotBlank() && weekdays.isNotEmpty(),
+                            enabled = setupDateRangeValid && weekdays.isNotEmpty(),
                         ) { Text("Generate calendar") }
                     }
                 }
@@ -181,6 +193,21 @@ fun SetupScreen(
             }
         }
 
+        if (state.teachingDays.isNotEmpty()) {
+            item {
+                val working = state.teachingDays.filter { it.isWorking }
+                val holidays = state.teachingDays.size - working.size
+                val plannedHours = working.sumOf { it.hours }
+                Card(Modifier.fillMaxWidth()) {
+                    Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                        Text("Semester plan", style = MaterialTheme.typography.titleMedium)
+                        Text("${working.size} working day(s) · $holidays holiday/excluded day(s)")
+                        Text("$plannedHours planned teaching hour(s) at the current calendar settings")
+                    }
+                }
+            }
+        }
+
         if (state.registers.any { it.id != current.id }) {
             item {
                 Card(Modifier.fillMaxWidth()) {
@@ -212,8 +239,8 @@ private fun TeachingDayCard(day: TeachingDayEntity, onUpdate: (TeachingDayEntity
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
             Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
                 Column {
-                    Text(day.date, style = MaterialTheme.typography.titleSmall)
-                    Text(if (day.isWorking) "Working day" else "Holiday / excluded")
+                    Text("${displayDate(day.date)} · ${displayWeekday(day.date)}", style = MaterialTheme.typography.titleSmall)
+                    Text(if (day.isWorking) "Working day · ${day.hours} hour(s)" else "Holiday / excluded${if (day.note.isNotBlank()) " · ${day.note}" else ""}")
                 }
                 Switch(
                     checked = day.isWorking,
