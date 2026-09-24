@@ -123,7 +123,10 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
                 date = date.plusDays(1)
             }
         }
-        db.attendanceMarkDao().deleteOutsideDateRange(register.id, start.toString(), end.toString())
+        val outsideMarks = db.attendanceMarkDao().countOutsideDateRange(register.id, start.toString(), end.toString())
+        require(outsideMarks == 0) {
+            "Calendar range change would exclude $outsideMarks existing attendance mark(s). Clear or export those records before changing the semester dates."
+        }
         db.teachingDayDao().deleteForRegister(register.id)
         db.teachingDayDao().upsertAll(generated)
         db.registerDao().upsert(register.copy(calendarWeekdaysCsv = weekdays.sorted().joinToString(","), updatedAt = System.currentTimeMillis()))
@@ -139,7 +142,10 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
 
     suspend fun updateTeachingDay(day: TeachingDayEntity) = db.withTransaction {
         require(day.hours in 1..8) { "Hours must be between 1 and 8" }
-        db.attendanceMarkDao().deleteHoursAbove(day.registerId, day.date, day.hours)
+        val marksAbove = db.attendanceMarkDao().countHoursAbove(day.registerId, day.date, day.hours)
+        require(marksAbove == 0) {
+            "Cannot reduce this day to ${day.hours} hour(s): $marksAbove attendance mark(s) exist in later hours."
+        }
         db.teachingDayDao().upsertAll(listOf(day))
         db.auditEventDao().insert(
             AuditEventEntity(
@@ -169,7 +175,10 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
             isComplete = false,
             note = "Special working day",
         )
-        db.attendanceMarkDao().deleteHoursAbove(registerId, date, hours)
+        val marksAbove = db.attendanceMarkDao().countHoursAbove(registerId, date, hours)
+        require(marksAbove == 0) {
+            "Cannot set this day to $hours hour(s): $marksAbove attendance mark(s) exist in later hours."
+        }
         db.teachingDayDao().upsertAll(listOf(day))
         db.auditEventDao().insert(
             AuditEventEntity(
@@ -208,6 +217,9 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
     suspend fun copyCalendar(sourceId: String, targetId: String) = db.withTransaction {
         require(sourceId != targetId) { "Source and target registers must differ" }
         val sourceDays = db.teachingDayDao().getForRegister(sourceId)
+        require(db.attendanceMarkDao().getForRegister(targetId).isEmpty()) {
+            "Calendar copy is blocked because the target register already has attendance. Export/clear attendance first or use a new register."
+        }
         db.teachingDayDao().deleteForRegister(targetId)
         db.teachingDayDao().upsertAll(sourceDays.map { it.copy(registerId = targetId, isComplete = false) })
         db.auditEventDao().insert(
