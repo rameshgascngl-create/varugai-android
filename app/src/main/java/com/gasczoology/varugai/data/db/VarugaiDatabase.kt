@@ -6,6 +6,8 @@ import androidx.room.Room
 import androidx.room.RoomDatabase
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
+import com.gasczoology.varugai.security.DatabaseKeyManager
+import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
 @Database(
     entities = [
@@ -32,10 +34,18 @@ abstract class VarugaiDatabase : RoomDatabase() {
             }
         }
 
-        fun create(context: Context): VarugaiDatabase = Room.databaseBuilder(
-            context.applicationContext,
-            VarugaiDatabase::class.java,
-            "varugai.db",
-        ).addMigrations(MIGRATION_1_2).build()
+        fun create(context: Context): VarugaiDatabase {
+            System.loadLibrary("sqlcipher")
+            val passphrase = DatabaseKeyManager(context.applicationContext).getOrCreatePassphrase()
+            val factory = SupportOpenHelperFactory(passphrase)
+            return Room.databaseBuilder(
+                context.applicationContext,
+                VarugaiDatabase::class.java,
+                "varugai.db",
+            )
+                .openHelperFactory(factory)
+                .addMigrations(MIGRATION_1_2)
+                .build()
+        }
     }
 }
