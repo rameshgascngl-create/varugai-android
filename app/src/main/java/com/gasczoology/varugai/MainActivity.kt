@@ -1,6 +1,7 @@
 package com.gasczoology.varugai
 
 import android.os.Bundle
+import android.view.WindowManager
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.layout.Box
@@ -14,16 +15,21 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.lifecycle.compose.LocalLifecycleOwner
 import androidx.navigation.NavDestination.Companion.hierarchy
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -34,6 +40,8 @@ import com.gasczoology.varugai.ui.export.ExportScreen
 import com.gasczoology.varugai.ui.export.ExportViewModel
 import com.gasczoology.varugai.ui.grid.GridViewModel
 import com.gasczoology.varugai.ui.navigation.VarugaiDestination
+import com.gasczoology.varugai.ui.lock.LockScreen
+import com.gasczoology.varugai.ui.lock.LockViewModel
 import com.gasczoology.varugai.ui.roster.RosterScreen
 import com.gasczoology.varugai.ui.roster.RosterViewModel
 import com.gasczoology.varugai.ui.setup.SetupScreen
@@ -45,28 +53,60 @@ import com.gasczoology.varugai.ui.theme.VarugaiTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val app = application as VarugaiApplication
         setContent {
             VarugaiTheme {
-                val setupViewModel: SetupViewModel = viewModel(
-                    factory = SetupViewModel.Factory(app.repository, app.preferences)
-                )
-                val rosterViewModel: RosterViewModel = viewModel(
-                    factory = RosterViewModel.Factory(app.repository, app.preferences)
-                )
-                val gridViewModel: GridViewModel = viewModel(
-                    factory = GridViewModel.Factory(app.repository, app.preferences)
-                )
-                val summaryViewModel: SummaryViewModel = viewModel(
-                    factory = SummaryViewModel.Factory(app.repository, app.preferences)
-                )
-                val exportViewModel: ExportViewModel = viewModel(
-                    factory = ExportViewModel.Factory(app.repository, app.preferences)
-                )
-                VarugaiApp(setupViewModel, rosterViewModel, gridViewModel, summaryViewModel, exportViewModel)
+                VarugaiRoot(app)
             }
         }
     }
+}
+
+@Composable
+private fun VarugaiRoot(app: VarugaiApplication) {
+    val lockViewModel: LockViewModel = viewModel(factory = LockViewModel.Factory(app.preferences))
+    val lockState by lockViewModel.uiState.collectAsStateWithLifecycle()
+    val lifecycleOwner = LocalLifecycleOwner.current
+
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            when (event) {
+                Lifecycle.Event.ON_STOP -> lockViewModel.onBackgrounded()
+                Lifecycle.Event.ON_START -> lockViewModel.onForegrounded()
+                else -> Unit
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
+
+    if (lockState.loading || !lockState.pinConfigured || lockState.locked || lockState.settingsMode) {
+        LockScreen(
+            state = lockState,
+            onSetupPin = lockViewModel::setupPin,
+            onUnlock = lockViewModel::unlock,
+            onOpenSettings = lockViewModel::openSettings,
+            onSaveSettings = lockViewModel::saveSettings,
+            onCancelSettings = lockViewModel::cancelSettings,
+        )
+        return
+    }
+
+    val setupViewModel: SetupViewModel = viewModel(factory = SetupViewModel.Factory(app.repository, app.preferences))
+    val rosterViewModel: RosterViewModel = viewModel(factory = RosterViewModel.Factory(app.repository, app.preferences))
+    val gridViewModel: GridViewModel = viewModel(factory = GridViewModel.Factory(app.repository, app.preferences))
+    val summaryViewModel: SummaryViewModel = viewModel(factory = SummaryViewModel.Factory(app.repository, app.preferences))
+    val exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory(app.repository, app.preferences))
+
+    VarugaiApp(
+        setupViewModel,
+        rosterViewModel,
+        gridViewModel,
+        summaryViewModel,
+        exportViewModel,
+        onLockNow = lockViewModel::lockNow,
+    )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -77,6 +117,7 @@ private fun VarugaiApp(
     gridViewModel: GridViewModel,
     summaryViewModel: SummaryViewModel,
     exportViewModel: ExportViewModel,
+    onLockNow: () -> Unit,
 ) {
     val navController = rememberNavController()
     val backStack by navController.currentBackStackEntryAsState()
@@ -121,6 +162,9 @@ private fun VarugaiApp(
                         Text("VARUGAI 16")
                         Text("Semester attendance grid", style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                     }
+                },
+                actions = {
+                    TextButton(onClick = onLockNow) { Text("Lock") }
                 }
             )
         },
