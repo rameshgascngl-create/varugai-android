@@ -151,7 +151,7 @@ fun SetupScreen(
                         }
                     }
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                        Button(onClick = { onSave(edit, weekdays) }, enabled = setupDateRangeValid) { Text("Save setup") }
+                        Button(onClick = { onSave(edit, weekdays) }) { Text("Save setup") }
                         OutlinedButton(
                             onClick = { onGenerateCalendar(edit, weekdays) },
                             enabled = setupDateRangeValid && weekdays.isNotEmpty(),
@@ -285,7 +285,7 @@ private fun DateDropdownPicker(label: String, isoDate: String, onIsoDate: (Strin
                 commit(newYear = it.toInt())
             }
         }
-        Text("Selected: " + day.toString().padStart(2, '0') + "/" + month.toString().padStart(2, '0') + "/" + year)
+        Text(if (isoDate.isBlank()) "Selected: Not set — choose day/month/year" else "Selected: " + day.toString().padStart(2, '0') + "/" + month.toString().padStart(2, '0') + "/" + year)
     }
 }
 
