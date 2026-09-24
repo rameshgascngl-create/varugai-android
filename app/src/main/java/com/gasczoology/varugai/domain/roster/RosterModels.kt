@@ -11,11 +11,14 @@ data class RollChange(
 
 data class RosterImportPlan(
     val registerId: String,
+    val existingCount: Int,
     val students: List<StudentEntity>,
     val rollChanges: List<RollChange>,
     val omittedWithoutAttendance: List<StudentEntity>,
     val omittedWithAttendance: List<StudentEntity>,
 ) {
+    val incomingCount: Int get() = students.size
+    val sizeDelta: Int get() = incomingCount - existingCount
     val isBlocked: Boolean get() = omittedWithAttendance.isNotEmpty()
 }
 
