@@ -35,6 +35,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
+import com.gasczoology.varugai.data.repository.VarugaiRepository
 import com.gasczoology.varugai.ui.grid.GridScreen
 import com.gasczoology.varugai.ui.export.ExportScreen
 import com.gasczoology.varugai.ui.export.ExportViewModel
@@ -42,6 +43,7 @@ import com.gasczoology.varugai.ui.grid.GridViewModel
 import com.gasczoology.varugai.ui.navigation.VarugaiDestination
 import com.gasczoology.varugai.ui.lock.LockScreen
 import com.gasczoology.varugai.ui.lock.LockViewModel
+import com.gasczoology.varugai.ui.recovery.DatabaseRecoveryScreen
 import com.gasczoology.varugai.ui.roster.RosterScreen
 import com.gasczoology.varugai.ui.roster.RosterViewModel
 import com.gasczoology.varugai.ui.setup.SetupScreen
@@ -65,6 +67,32 @@ class MainActivity : ComponentActivity() {
 
 @Composable
 private fun VarugaiRoot(app: VarugaiApplication) {
+    val databaseState by app.databaseState.collectAsStateWithLifecycle()
+    when (val state = databaseState) {
+        DatabaseOpenState.Opening -> {
+            Box(Modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
+                Text("Opening encrypted attendance database…")
+            }
+        }
+        is DatabaseOpenState.RecoveryRequired -> {
+            DatabaseRecoveryScreen(
+                reason = state.reason,
+                recoveryKeyManager = app.recoveryKeyManager,
+                onRestoreConfirmed = app::replaceUnreadableDatabaseFromBackup,
+                onResetConfirmed = app::destructiveResetUnreadableDatabase,
+            )
+        }
+        is DatabaseOpenState.Ready -> {
+            VarugaiReadyRoot(app, state.repository)
+        }
+    }
+}
+
+@Composable
+private fun VarugaiReadyRoot(
+    app: VarugaiApplication,
+    repository: VarugaiRepository,
+) {
     val lockViewModel: LockViewModel = viewModel(factory = LockViewModel.Factory(app.preferences))
     val lockState by lockViewModel.uiState.collectAsStateWithLifecycle()
     val lifecycleOwner = LocalLifecycleOwner.current
@@ -93,11 +121,11 @@ private fun VarugaiRoot(app: VarugaiApplication) {
         return
     }
 
-    val setupViewModel: SetupViewModel = viewModel(factory = SetupViewModel.Factory(app.repository, app.preferences))
-    val rosterViewModel: RosterViewModel = viewModel(factory = RosterViewModel.Factory(app.repository, app.preferences))
-    val gridViewModel: GridViewModel = viewModel(factory = GridViewModel.Factory(app.repository, app.preferences))
-    val summaryViewModel: SummaryViewModel = viewModel(factory = SummaryViewModel.Factory(app.repository, app.preferences))
-    val exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory(app.repository, app.preferences, app.recoveryKeyManager))
+    val setupViewModel: SetupViewModel = viewModel(factory = SetupViewModel.Factory(repository, app.preferences))
+    val rosterViewModel: RosterViewModel = viewModel(factory = RosterViewModel.Factory(repository, app.preferences))
+    val gridViewModel: GridViewModel = viewModel(factory = GridViewModel.Factory(repository, app.preferences))
+    val summaryViewModel: SummaryViewModel = viewModel(factory = SummaryViewModel.Factory(repository, app.preferences))
+    val exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory(repository, app.preferences, app.recoveryKeyManager))
 
     VarugaiApp(
         setupViewModel,
