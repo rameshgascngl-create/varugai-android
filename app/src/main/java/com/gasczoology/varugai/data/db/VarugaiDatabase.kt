@@ -10,6 +10,11 @@ import com.gasczoology.varugai.security.DatabaseKeyManager
 import com.gasczoology.varugai.security.DatabaseKeyUnavailableException
 import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
 
+class DatabaseRecoveryRequiredException(
+    message: String,
+    cause: Throwable? = null,
+) : IllegalStateException(message, cause)
+
 @Database(
     entities = [
         RegisterEntity::class,
@@ -21,11 +26,6 @@ import net.zetetic.database.sqlcipher.SupportOpenHelperFactory
     version = 2,
     exportSchema = true,
 )
-class DatabaseRecoveryRequiredException(
-    message: String,
-    cause: Throwable? = null,
-) : IllegalStateException(message, cause)
-
 abstract class VarugaiDatabase : RoomDatabase() {
     abstract fun registerDao(): RegisterDao
     abstract fun studentDao(): StudentDao
