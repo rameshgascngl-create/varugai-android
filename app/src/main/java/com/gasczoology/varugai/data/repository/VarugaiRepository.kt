@@ -33,9 +33,22 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
 
     suspend fun getRegister(id: String): RegisterEntity? = db.registerDao().getById(id)
 
-    suspend fun saveRegister(register: RegisterEntity) {
+    suspend fun saveRegister(register: RegisterEntity) = db.withTransaction {
+        validateRegisterRules(register)
+        val before = db.registerDao().getById(register.id)
+        val updated = register.copy(updatedAt = System.currentTimeMillis())
         // @Upsert is deliberate; INSERT OR REPLACE would cascade-delete child rows.
-        db.registerDao().upsert(register.copy(updatedAt = System.currentTimeMillis()))
+        db.registerDao().upsert(updated)
+        if (before != null && ruleSettingsChanged(before, updated)) {
+            db.auditEventDao().insert(
+                AuditEventEntity(
+                    registerId = updated.id,
+                    timestamp = System.currentTimeMillis(),
+                    kind = "rules",
+                    message = "Attendance rule set updated: ${updated.ruleSetLabel.ifBlank { "Unlabelled institutional rule set" }}; thresholds ${updated.condonationMedicalFloor}/${updated.condonationFeeFloor}/${updated.passMark}; minimum counted hours ${updated.minimumCountedHours}",
+                )
+            )
+        }
     }
 
     suspend fun createRegister(seed: RegisterEntity? = null): RegisterEntity = db.withTransaction {
@@ -693,6 +706,28 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         val students = db.studentDao().getForRegister(registerId)
         db.studentDao().upsertAll(students.mapIndexed { index, student -> student.copy(rosterOrder = index) })
     }
+
+    private fun validateRegisterRules(register: RegisterEntity) {
+        require(register.condonationMedicalFloor in 0.0..100.0)
+        require(register.condonationFeeFloor in 0.0..100.0)
+        require(register.passMark in 0.0..100.0)
+        require(register.condonationMedicalFloor <= register.condonationFeeFloor) {
+            "Medical condonation floor must not exceed the fee-condonation floor."
+        }
+        require(register.condonationFeeFloor <= register.passMark) {
+            "Fee-condonation floor must not exceed the eligible threshold."
+        }
+        require(register.verifyBandPoints in 0.0..20.0) { "Verification band must be between 0 and 20 percentage points." }
+        require(register.minimumCountedHours in 0..1000) { "Minimum counted hours must be between 0 and 1000." }
+    }
+
+    private fun ruleSettingsChanged(before: RegisterEntity, after: RegisterEntity): Boolean =
+        before.passMark != after.passMark ||
+            before.condonationFeeFloor != after.condonationFeeFloor ||
+            before.condonationMedicalFloor != after.condonationMedicalFloor ||
+            before.verifyBandPoints != after.verifyBandPoints ||
+            before.minimumCountedHours != after.minimumCountedHours ||
+            before.ruleSetLabel != after.ruleSetLabel
 
     private fun validateOptionalDates(from: String, to: String) {
         val f = from.trim().takeIf { it.isNotBlank() }?.let(LocalDate::parse)
