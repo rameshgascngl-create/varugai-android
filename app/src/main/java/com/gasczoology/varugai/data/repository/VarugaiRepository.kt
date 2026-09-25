@@ -627,6 +627,39 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
             )
         }
 
+    suspend fun restoreRecoveredBundle(
+        imported: com.gasczoology.varugai.data.backup.RegisterBundle,
+        sourceLabel: String,
+    ): String = db.withTransaction {
+        val restoredId = imported.register.id
+        require(restoredId.isNotBlank()) { "Recovered register id is missing." }
+        require(db.registerDao().getAll().isEmpty()) { "Recovery target database must be empty." }
+
+        val restoredRegister = imported.register.copy(
+            id = restoredId,
+            updatedAt = System.currentTimeMillis(),
+        )
+        val restoredStudents = imported.students.map { it.copy(registerId = restoredId) }
+        val restoredDays = imported.days.map { it.copy(registerId = restoredId) }
+        val restoredMarks = imported.marks.map { it.copy(registerId = restoredId) }
+        val restoredAudits = imported.audits.map { it.copy(id = 0, registerId = restoredId) }
+
+        db.registerDao().upsert(restoredRegister)
+        if (restoredStudents.isNotEmpty()) db.studentDao().upsertAll(restoredStudents)
+        if (restoredDays.isNotEmpty()) db.teachingDayDao().upsertAll(restoredDays)
+        if (restoredMarks.isNotEmpty()) db.attendanceMarkDao().upsertAll(restoredMarks)
+        if (restoredAudits.isNotEmpty()) db.auditEventDao().insertAll(restoredAudits)
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = restoredId,
+                timestamp = System.currentTimeMillis(),
+                kind = "recovery",
+                message = "Unreadable local database replaced from validated backup: $sourceLabel",
+            )
+        )
+        restoredId
+    }
+
     suspend fun restoreRegisterBundle(
         targetRegisterId: String,
         imported: com.gasczoology.varugai.data.backup.RegisterBundle,
