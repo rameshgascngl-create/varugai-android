@@ -84,7 +84,7 @@ object PortableBackupCrypto {
         val envelope = buildJsonObject {
             put("format", FORMAT)
             put("envelopeSchema", ENVELOPE_SCHEMA)
-            put("appVersion", "16.0.1")
+            put("appVersion", "16.0.2")
             put("created", Instant.now().toString())
             put("kdf", KDF)
             put("cipher", CIPHER)
