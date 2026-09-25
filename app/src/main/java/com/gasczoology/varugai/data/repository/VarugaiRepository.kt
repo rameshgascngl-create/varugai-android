@@ -114,6 +114,8 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
     }
 
     suspend fun generateCalendar(register: RegisterEntity, weekdays: Set<Int>) = db.withTransaction {
+        validateRegisterRules(register)
+        val before = db.registerDao().getById(register.id)
         val start = LocalDate.parse(register.startDate)
         val end = LocalDate.parse(register.endDate)
         require(!end.isBefore(start)) { "End date must not precede start date" }
@@ -142,8 +144,12 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         }
         db.teachingDayDao().deleteForRegister(register.id)
         db.teachingDayDao().upsertAll(generated)
-        db.registerDao().upsert(register.copy(calendarWeekdaysCsv = weekdays.sorted().joinToString(","), updatedAt = System.currentTimeMillis()))
-        db.auditEventDao().insert(
+        val updatedRegister = register.copy(
+            calendarWeekdaysCsv = weekdays.sorted().joinToString(","),
+            updatedAt = System.currentTimeMillis(),
+        )
+        db.registerDao().upsert(updatedRegister)
+        val events = mutableListOf(
             AuditEventEntity(
                 registerId = register.id,
                 timestamp = System.currentTimeMillis(),
@@ -151,6 +157,17 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
                 message = "Calendar generated for ${generated.size} date(s)",
             )
         )
+        if (before != null && ruleSettingsChanged(before, updatedRegister)) {
+            events.add(
+                AuditEventEntity(
+                    registerId = register.id,
+                    timestamp = System.currentTimeMillis(),
+                    kind = "rules",
+                    message = "Attendance rule set updated during calendar generation: ${updatedRegister.ruleSetLabel.ifBlank { "Unlabelled institutional rule set" }}; thresholds ${updatedRegister.condonationMedicalFloor}/${updatedRegister.condonationFeeFloor}/${updatedRegister.passMark}; minimum counted hours ${updatedRegister.minimumCountedHours}",
+                )
+            )
+        }
+        db.auditEventDao().insertAll(events)
     }
 
     suspend fun updateTeachingDay(day: TeachingDayEntity) = db.withTransaction {
