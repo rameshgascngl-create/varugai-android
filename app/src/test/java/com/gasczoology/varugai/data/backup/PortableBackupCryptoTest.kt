@@ -55,6 +55,25 @@ class PortableBackupCryptoTest {
     }
 
     @Test
+    fun truncatedEncryptedBackupIsRejectedWithoutDetailOracle() {
+        val encrypted = PortableBackupCrypto.encrypt("""{"secret":"attendance"}""", key)
+        val truncated = encrypted.dropLast(12)
+        val result = runCatching { PortableBackupCrypto.decrypt(truncated, key) }
+        assertTrue(result.isFailure)
+    }
+
+    @Test
+    fun malformedCiphertextUsesGenericFailureMessage() {
+        val encrypted = PortableBackupCrypto.encrypt("""{"secret":"attendance"}""", key)
+        val marker = "\"ciphertext\": \""
+        val start = encrypted.indexOf(marker) + marker.length
+        val malformed = encrypted.substring(0, start) + "*" + encrypted.substring(start + 1)
+        val result = runCatching { PortableBackupCrypto.decrypt(malformed, key) }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("could not be opened"))
+    }
+
+    @Test
     fun generatedRecoveryKeyHasOneHundredBitsOfSymbolEntropyShape() {
         val generated = RecoveryKeyFormat.generate()
         assertEquals(24, generated.length)
