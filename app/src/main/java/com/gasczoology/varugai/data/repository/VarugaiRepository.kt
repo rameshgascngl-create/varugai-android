@@ -142,6 +142,13 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
 
     suspend fun updateTeachingDay(day: TeachingDayEntity) = db.withTransaction {
         require(day.hours in 1..8) { "Hours must be between 1 and 8" }
+        val existing = db.teachingDayDao().getByDate(day.registerId, day.date)
+        if (existing?.isWorking == true && !day.isWorking) {
+            val marks = db.attendanceMarkDao().getForDay(day.registerId, day.date)
+            require(marks.isEmpty()) {
+                "Cannot mark ${day.date} as a holiday because attendance already exists. Clear that day's attendance first."
+            }
+        }
         val marksAbove = db.attendanceMarkDao().countHoursAbove(day.registerId, day.date, day.hours)
         require(marksAbove == 0) {
             "Cannot reduce this day to ${day.hours} hour(s): $marksAbove attendance mark(s) exist in later hours."
@@ -154,6 +161,33 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
                 kind = "day",
                 date = day.date,
                 message = if (day.isWorking) "Working day set to ${day.hours} hour(s)" else "Marked as non-working day",
+            )
+        )
+    }
+
+    suspend fun markHoliday(registerId: String, date: String, name: String) = db.withTransaction {
+        val day = requireNotNull(db.teachingDayDao().getByDate(registerId, date)) {
+            "Holiday date must be inside the generated semester calendar."
+        }
+        val marks = db.attendanceMarkDao().getForDay(registerId, date)
+        require(marks.isEmpty()) {
+            "Cannot mark $date as a holiday because attendance already exists. Clear that day's attendance first."
+        }
+        val cleanName = name.trim().ifBlank { "Festival / holiday" }
+        db.teachingDayDao().upsert(
+            day.copy(
+                isWorking = false,
+                isComplete = false,
+                note = cleanName,
+            )
+        )
+        db.auditEventDao().insert(
+            AuditEventEntity(
+                registerId = registerId,
+                timestamp = System.currentTimeMillis(),
+                kind = "calendar",
+                date = date,
+                message = "Holiday marked: $cleanName",
             )
         )
     }
@@ -194,6 +228,13 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
     suspend fun setDayOfWeekWorking(registerId: String, dayOfWeek: Int, working: Boolean) = db.withTransaction {
         require(dayOfWeek in 1..7)
         val days = db.teachingDayDao().getForRegister(registerId)
+        if (!working) {
+            val affectedDates = days.filter { LocalDate.parse(it.date).dayOfWeek.value == dayOfWeek && it.isWorking }
+            val blocked = affectedDates.firstOrNull { db.attendanceMarkDao().getForDay(registerId, it.date).isNotEmpty() }
+            require(blocked == null) {
+                "Cannot make all ${DayOfWeek.of(dayOfWeek)} dates holidays because ${blocked!!.date} already has attendance. Clear that day's attendance first."
+            }
+        }
         val updated = days.map { day ->
             if (LocalDate.parse(day.date).dayOfWeek.value == dayOfWeek) {
                 day.copy(
