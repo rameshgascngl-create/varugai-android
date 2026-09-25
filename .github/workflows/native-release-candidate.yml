@@ -45,9 +45,7 @@ jobs:
           ./tools/audit-phase5-export.sh
           ./tools/audit-native-ux-hardening.sh
           ./tools/audit-required-corrections.sh
-
-      - name: Final production hardening source audit
-        run: bash ./tools/audit-final-production-hardening.sh
+          bash ./tools/audit-final-production-hardening.sh
 
       - name: Golden v15 to v16 migration parity
         run: ./gradlew --no-daemon testDebugUnitTest --tests 'com.gasczoology.varugai.data.backup.LegacyMigrationGoldenTest'
@@ -77,7 +75,8 @@ jobs:
         run: |
           echo "$VARUGAI_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/varugai-release.jks"
           echo "VARUGAI_KEYSTORE_PATH=$RUNNER_TEMP/varugai-release.jks" >> "$GITHUB_ENV"
-          keytool -list -v -keystore "$RUNNER_TEMP/varugai-release.jks"             -storepass "$VARUGAI_KEYSTORE_PASSWORD" -alias "$VARUGAI_KEY_ALIAS"             | tee keystore-cert.txt
+          keytool -list -v -keystore "$RUNNER_TEMP/varugai-release.jks" \
+            -storepass "$VARUGAI_KEYSTORE_PASSWORD" -alias "$VARUGAI_KEY_ALIAS" | tee keystore-cert.txt
           EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
           ACTUAL=$(grep 'SHA256:' keystore-cert.txt | head -1 | sed 's/.*SHA256: *//' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
           echo "Expected signer: $EXPECTED"
@@ -91,7 +90,7 @@ jobs:
           VARUGAI_KEY_PASSWORD: ${{ secrets.VARUGAI_KEY_PASSWORD }}
         run: ./gradlew --no-daemon clean assembleRelease bundleRelease
 
-      - name: Verify release APK architecture and signature
+      - name: Verify release APK architecture, identity, alignment and signature
         run: |
           mkdir -p out
           V=$(grep -oP 'versionName = "\K[^"]+' app/build.gradle.kts)
@@ -112,7 +111,15 @@ jobs:
           "$BT/aapt" dump badging "out/VARUGAI-$V-release.apk" | tee out/apk-badging.txt
           "$BT/aapt" dump xmltree "out/VARUGAI-$V-release.apk" AndroidManifest.xml | tee out/release-manifest.txt
           "$BT/zipalign" -c -v 4 "out/VARUGAI-$V-release.apk" | tee out/zipalign.txt
-          unzip -Z1 "out/VARUGAI-$V-release.apk" | grep -E '^lib/.*/libsqlcipher\\.so          ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' out/release-manifest.txt
+          unzip -Z1 "out/VARUGAI-$V-release.apk" | grep -E '^lib/.*/libsqlcipher\.so$' | sort | tee out/native-abis.txt
+          test -s out/native-abis.txt
+
+          grep -q "package: name='com.gasczoology.varugai'" out/apk-badging.txt
+          grep -q "versionCode='16002'" out/apk-badging.txt
+          grep -q "versionName='16.0.2'" out/apk-badging.txt
+          ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' out/release-manifest.txt
+          ! grep -q 'android.permission.INTERNET' out/release-manifest.txt
+          ! grep -q 'android.permission.CAMERA' out/release-manifest.txt
           ! grep -q 'androidx.compose.ui.tooling.PreviewActivity' out/release-manifest.txt
           ! grep -q 'androidx.activity.ComponentActivity' out/release-manifest.txt
 
@@ -152,50 +159,6 @@ jobs:
             out/apk-badging.txt
             out/zipalign.txt
             out/native-abis.txt
-            out/apk-file-list.txt
-            out/release-manifest.txt
-            out/release-dex-strings.txt
-            keystore-cert.txt
-            DEVICE_QA_NATIVE_V16.md
- | sort | tee out/native-abis.txt
-          test -s out/native-abis.txt
-          ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' out/release-manifest.txt
-          ! grep -q 'androidx.compose.ui.tooling.PreviewActivity' out/release-manifest.txt
-          ! grep -q 'androidx.activity.ComponentActivity' out/release-manifest.txt
-
-          : > out/release-dex-strings.txt
-          while read -r dex; do
-            unzip -p "out/VARUGAI-$V-release.apk" "$dex" | strings >> out/release-dex-strings.txt
-          done < <(unzip -Z1 "out/VARUGAI-$V-release.apk" | grep -E '^classes([0-9]*)?\.dex$')
-          ! grep -Fq 'com/gasczoology/varugai/data/repository/VarugaiRepository' out/release-dex-strings.txt
-          ! grep -Fq 'data/repository/VarugaiRepository' out/release-dex-strings.txt
-          ! grep -Eq 'NotificationManagerCompat|android/app/AlarmManager|SCHEDULE_EXACT_ALARM|USE_EXACT_ALARM|RECEIVE_BOOT_COMPLETED' out/release-dex-strings.txt
-
-          if grep -E 'WebViewAssetLoader|appassets\.androidplatform\.net|android\.webkit\.WebView|android.permission.CAMERA|androidx\.camera|ACTION_IMAGE_CAPTURE' out/release-dex-strings.txt; then
-            echo "Forbidden legacy web/camera reference detected in release APK"
-            exit 1
-          fi
-
-          "$BT/apksigner" verify --verbose --print-certs "out/VARUGAI-$V-release.apk" | tee out/apksigner.txt
-          EXPECTED=A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B
-          ACTUAL=$(grep -E 'Signer.*certificate SHA-256 digest:' out/apksigner.txt | head -1 | awk -F': ' '{print $NF}' | tr -d ':[:space:]' | tr '[:lower:]' '[:upper:]')
-          echo "APK signer: $ACTUAL"
-          test -n "$ACTUAL"
-          test "$ACTUAL" = "$EXPECTED"
-
-      - name: Checksums
-        run: |
-          cd out
-          sha256sum *.apk *.aab | tee SHA256SUMS.txt
-
-      - uses: actions/upload-artifact@v4
-        with:
-          name: VARUGAI-${{ env.VER }}-native-release-candidate
-          path: |
-            out/VARUGAI-*.apk
-            out/VARUGAI-*.aab
-            out/SHA256SUMS.txt
-            out/apksigner.txt
             out/apk-file-list.txt
             out/release-manifest.txt
             out/release-dex-strings.txt
