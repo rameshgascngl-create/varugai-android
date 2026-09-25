@@ -1,6 +1,7 @@
 package com.gasczoology.varugai.ui.export
 
 import android.net.Uri
+import com.gasczoology.varugai.BuildConfig
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -32,6 +33,7 @@ import androidx.compose.ui.unit.dp
 import com.gasczoology.varugai.data.backup.RegisterBundle
 import com.gasczoology.varugai.data.export.AttendancePdfWriter
 import com.gasczoology.varugai.data.export.NativeExportWriters
+import com.gasczoology.varugai.ui.common.BackupStatusCard
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -44,6 +46,7 @@ fun ExportScreen(
     onCancelRestore: () -> Unit,
     onCommitRestore: () -> Unit,
     onCreateBackup: suspend () -> String,
+    onBackupSucceeded: () -> Unit,
     onShowRecoveryKey: () -> Unit,
     onHideRecoveryKey: () -> Unit,
     onSubmitRecoveryKey: (String) -> Unit,
@@ -102,7 +105,7 @@ fun ExportScreen(
                         out.write(text.toByteArray(Charsets.UTF_8))
                     } ?: error("Could not open the selected destination.")
                 }
-            }.onSuccess { onNotify("Encrypted backup exported") }
+            }.onSuccess { onBackupSucceeded() }
                 .onFailure { onNotify(it.message ?: "Backup export failed") }
         }
     }
@@ -148,6 +151,10 @@ fun ExportScreen(
                     }
                 }
             }
+        }
+
+        item {
+            BackupStatusCard(lastSuccessfulBackupAt = state.lastFullBackupAt)
         }
 
         item {
@@ -200,7 +207,7 @@ fun ExportScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Backup / restore", style = MaterialTheme.typography.titleMedium)
-                    Text("New VARUGAI 16 backups are AES-256-GCM encrypted. The inner schema-3 payload still carries SHA-256 integrity checking.")
+                    Text("Full JSON backups are AES-256-GCM encrypted. The inner schema-3 payload still carries SHA-256 integrity checking.")
                     Text("VARUGAI 15.x schema-2 backups and older unencrypted VARUGAI 16 schema-3 backups remain importable.")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
@@ -216,6 +223,18 @@ fun ExportScreen(
                         Text("Encrypted export is disabled until the recovery key is generated and recorded.")
                     }
                     Text("Restore replaces the current register only after validation and confirmation. A failed restore is rolled back transactionally.")
+                }
+            }
+        }
+
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(6.dp)) {
+                    Text("About & data recovery", style = MaterialTheme.typography.titleMedium)
+                    Text("VARUGAI ${BuildConfig.VERSION_NAME}")
+                    Text("The attendance database is encrypted with SQLCipher and a device-keystore-derived key.")
+                    Text("Android automatic backup is disabled because that device key does not transfer safely.")
+                    Text("An exported encrypted JSON backup, together with its recovery key, is the only supported recovery route after phone loss, reset, app-data clearing or database-key loss.")
                 }
             }
         }
