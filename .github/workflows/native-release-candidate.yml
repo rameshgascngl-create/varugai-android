@@ -1,12 +1,10 @@
 name: VARUGAI 16 Native Release Candidate
-# Trigger signed VARUGAI 16.0.1 candidate after festival-holiday device-QA correction
+# Validate signed VARUGAI 16.0.2 final-hardening candidate
 
 on:
   push:
-    branches: [ release/varugai-native-v16 ]
-    paths:
-      - '.github/workflows/native-release-candidate.yml'
-  workflow_dispatch:
+    branches: [ release/varugai-native-v16, audit/v16.0.2-final-production-hardening ]
+      workflow_dispatch:
 
 permissions:
   contents: read
