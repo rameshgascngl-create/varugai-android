@@ -154,6 +154,7 @@ fun ExportScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Exports", style = MaterialTheme.typography.titleMedium)
+                    Text("Privacy warning: CSV, XLSX, PDF and audit exports may contain student or academic records and are not encrypted by VARUGAI after export. Choose the destination carefully.")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
                             enabled = bundle != null,
