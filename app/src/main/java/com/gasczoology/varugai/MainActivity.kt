@@ -205,6 +205,7 @@ private fun VarugaiApp(
                     onGenerateCalendar = setupViewModel::generateCalendar,
                     onCopyCalendar = setupViewModel::copyCalendar,
                     onUpdateTeachingDay = setupViewModel::updateTeachingDay,
+                    onMarkHoliday = setupViewModel::markHoliday,
                     onAddWorkingDay = setupViewModel::addWorkingDay,
                     onSetDayOfWeekWorking = setupViewModel::setDayOfWeekWorking,
                     modifier = Modifier.padding(horizontal = 16.dp),
