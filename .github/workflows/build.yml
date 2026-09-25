@@ -3,7 +3,7 @@ name: VARUGAI 16 Native Phase Gate
 on:
   workflow_dispatch:
   push:
-    branches: [ release/varugai-native-v16, audit/v16-parity-hardening ]
+    branches: [ release/varugai-native-v16, audit/v16-parity-hardening, audit/v16-encrypted-backup-recovery-key ]
 
 permissions:
   contents: read

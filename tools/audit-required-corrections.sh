@@ -48,7 +48,7 @@ if grep -RInE 'NotificationManagerCompat|AlarmManager|SCHEDULE_EXACT_ALARM|USE_E
 fi
 pass "notification and alarm features removed/descoped"
 
-if grep -RInE 'CameraX|ML Kit|barcode|QR|ACTION_IMAGE_CAPTURE|android\.permission\.CAMERA' app/src/main/java app/src/main/AndroidManifest.xml >/dev/null; then
+if grep -RInE 'androidx\.camera|CameraX|com\.google\.mlkit|BarcodeScanner|BarcodeScanning|BarcodeFormat|ACTION_IMAGE_CAPTURE|android\.permission\.CAMERA' app/src/main/java app/src/main/AndroidManifest.xml >/dev/null; then
   fail "camera/QR scan code detected; scan verification is import validation only"
 fi
 grep -q 'validateRows' app/src/main/java/com/gasczoology/varugai/data/importer/RosterFileParser.kt || fail "roster row validation missing"

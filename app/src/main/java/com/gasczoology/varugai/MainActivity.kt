@@ -97,7 +97,7 @@ private fun VarugaiRoot(app: VarugaiApplication) {
     val rosterViewModel: RosterViewModel = viewModel(factory = RosterViewModel.Factory(app.repository, app.preferences))
     val gridViewModel: GridViewModel = viewModel(factory = GridViewModel.Factory(app.repository, app.preferences))
     val summaryViewModel: SummaryViewModel = viewModel(factory = SummaryViewModel.Factory(app.repository, app.preferences))
-    val exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory(app.repository, app.preferences))
+    val exportViewModel: ExportViewModel = viewModel(factory = ExportViewModel.Factory(app.repository, app.preferences, app.recoveryKeyManager))
 
     VarugaiApp(
         setupViewModel,
@@ -256,7 +256,11 @@ private fun VarugaiApp(
                     onPreviewRestore = exportViewModel::previewRestore,
                     onCancelRestore = exportViewModel::cancelRestore,
                     onCommitRestore = exportViewModel::commitRestore,
-                    onCreateBackup = exportViewModel::nativeBackupText,
+                    onCreateBackup = exportViewModel::encryptedBackupText,
+                    onShowRecoveryKey = exportViewModel::showRecoveryKey,
+                    onHideRecoveryKey = exportViewModel::hideRecoveryKey,
+                    onSubmitRecoveryKey = exportViewModel::submitRecoveryKeyForRestore,
+                    onCancelRecoveryKeyPrompt = exportViewModel::cancelRecoveryKeyPrompt,
                     onNotify = exportViewModel::notify,
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
