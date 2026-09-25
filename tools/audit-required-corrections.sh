@@ -13,8 +13,13 @@ LOCK_VM=app/src/main/java/com/gasczoology/varugai/ui/lock/LockViewModel.kt
 LOCK_UI=app/src/main/java/com/gasczoology/varugai/ui/lock/LockScreen.kt
 README=README.md
 PROGUARD=app/proguard-rules.pro
+APP=app/src/main/java/com/gasczoology/varugai/VarugaiApplication.kt
+RECOVERY=app/src/main/java/com/gasczoology/varugai/ui/recovery/DatabaseRecoveryScreen.kt
+PREFS=app/src/main/java/com/gasczoology/varugai/data/preferences/VarugaiPreferences.kt
+SETUP=app/src/main/java/com/gasczoology/varugai/ui/setup/SetupScreen.kt
+EXPORT=app/src/main/java/com/gasczoology/varugai/ui/export/ExportScreen.kt
 
-for f in "$BUILD" "$MANIFEST" "$MAIN" "$DB" "$KEY" "$PIN" "$LOCK_VM" "$LOCK_UI" "$README" "$PROGUARD"; do
+for f in "$BUILD" "$MANIFEST" "$MAIN" "$DB" "$KEY" "$PIN" "$LOCK_VM" "$LOCK_UI" "$README" "$PROGUARD" "$APP" "$RECOVERY" "$PREFS" "$SETUP" "$EXPORT"; do
   [[ -f "$f" ]] || fail "missing required file: $f"
 done
 
@@ -28,12 +33,34 @@ grep -q 'androidx.compose.runtime' "$PROGUARD" || fail "Compose keep rule missin
 grep -q '\$\$serializer' "$PROGUARD" || fail "serialization keep rule missing"
 pass "release signing/R8 source configuration"
 
+grep -q 'splits {' "$BUILD" || fail "ABI split configuration missing"
+grep -q 'include("arm64-v8a", "armeabi-v7a")' "$BUILD" || fail "required handset ABIs not explicitly selected"
+grep -q 'isUniversalApk = true' "$BUILD" || fail "universal fallback APK disabled"
+pass "AAB/sideload ABI delivery configuration"
+
+
 grep -q 'net.zetetic:sqlcipher-android:4.13.0' "$BUILD" || fail "modern SQLCipher dependency missing"
 grep -q 'SupportOpenHelperFactory' "$DB" || fail "Room is not wired through SQLCipher"
 grep -q 'AndroidKeyStore' "$KEY" || fail "database passphrase not protected by Android Keystore"
 grep -q 'HmacSHA256' "$KEY" || fail "database passphrase is not derived by Keystore-backed HMAC"
 grep -q 'DERIVATION_CONTEXT' "$KEY" || fail "database key derivation context missing"
 pass "encrypted database source configuration"
+
+! grep -RIn 'fallbackToDestructiveMigration' app/src/main/java >/dev/null || fail "destructive Room migration fallback present"
+grep -q 'createAndVerify' "$DB" || fail "database open is not verified"
+grep -q 'DatabaseOpenState.RecoveryRequired' "$APP" || fail "database recovery state missing"
+grep -q 'Restore from a JSON backup' "$RECOVERY" || fail "database recovery primary action missing"
+grep -q 'Delete local data and reset' "$RECOVERY" || fail "explicit destructive reset confirmation missing"
+grep -q 'deleteMasterKey' "$KEY" || fail "explicit reset cannot rotate lost database key"
+pass "unrecoverable database fails into explicit recovery rather than destructive recreation"
+
+grep -q 'last_full_json_backup_' "$PREFS" || fail "per-register successful backup timestamp missing"
+grep -q 'BackupStatusCard' "$SETUP" || fail "home backup-age warning missing"
+grep -q 'BackupStatusCard' "$EXPORT" || fail "export backup-age warning missing"
+grep -q 'only one place' app/src/main/java/com/gasczoology/varugai/ui/common/BackupHealth.kt || fail "14-day single-copy risk text missing"
+grep -q 'BuildConfig.VERSION_NAME' "$EXPORT" || fail "About version is not sourced from BuildConfig"
+pass "backup durability exposure and BuildConfig version identity"
+
 
 grep -q 'LockScreen' "$MAIN" || fail "lock screen not wired at composition root"
 grep -q 'ON_STOP' "$MAIN" || fail "background lock lifecycle hook missing"
