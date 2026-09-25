@@ -32,6 +32,7 @@ import java.time.LocalDate
 import java.time.YearMonth
 import com.gasczoology.varugai.data.db.RegisterEntity
 import com.gasczoology.varugai.data.db.TeachingDayEntity
+import com.gasczoology.varugai.ui.common.BackupStatusCard
 import com.gasczoology.varugai.ui.common.displayDate
 import com.gasczoology.varugai.ui.common.displayWeekday
 
@@ -79,6 +80,10 @@ fun SetupScreen(
         item {
             Text("Register setup", style = MaterialTheme.typography.headlineSmall)
             Text("Native VARUGAI 16 · local Room database · no WebView or camera subsystem")
+        }
+
+        item {
+            BackupStatusCard(lastSuccessfulBackupAt = state.lastFullBackupAt)
         }
 
         item {
