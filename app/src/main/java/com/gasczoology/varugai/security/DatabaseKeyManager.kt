@@ -7,15 +7,47 @@ import javax.crypto.KeyGenerator
 import javax.crypto.Mac
 import javax.crypto.SecretKey
 
+class DatabaseKeyUnavailableException(
+    message: String,
+    cause: Throwable? = null,
+) : IllegalStateException(message, cause)
+
 /**
  * Derives the SQLCipher passphrase from a non-exportable Android Keystore HMAC key.
  * No database password, wrapped password, or hardcoded reusable secret is stored in app files.
+ *
+ * If an existing database is present but the Keystore key is missing or unusable,
+ * a new key is never generated automatically. The app enters explicit recovery.
  */
 class DatabaseKeyManager {
-    fun getOrCreatePassphrase(): ByteArray {
-        val mac = Mac.getInstance(ALGORITHM)
-        mac.init(getOrCreateMasterKey())
-        return mac.doFinal(DERIVATION_CONTEXT.toByteArray(Charsets.UTF_8))
+    fun hasMasterKey(): Boolean = runCatching {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        keyStore.containsAlias(KEY_ALIAS)
+    }.getOrDefault(false)
+
+    fun passphraseFor(databaseExists: Boolean): ByteArray {
+        if (databaseExists && !hasMasterKey()) {
+            throw DatabaseKeyUnavailableException(
+                "The SQLCipher database exists but its Android Keystore key is unavailable."
+            )
+        }
+        return try {
+            val mac = Mac.getInstance(ALGORITHM)
+            mac.init(getOrCreateMasterKey())
+            mac.doFinal(DERIVATION_CONTEXT.toByteArray(Charsets.UTF_8))
+        } catch (t: Throwable) {
+            throw DatabaseKeyUnavailableException(
+                "The SQLCipher database key cannot be used on this device.",
+                t,
+            )
+        }
+    }
+
+    fun getOrCreatePassphrase(): ByteArray = passphraseFor(databaseExists = false)
+
+    fun deleteMasterKey() {
+        val keyStore = KeyStore.getInstance(ANDROID_KEYSTORE).apply { load(null) }
+        if (keyStore.containsAlias(KEY_ALIAS)) keyStore.deleteEntry(KEY_ALIAS)
     }
 
     private fun getOrCreateMasterKey(): SecretKey {
