@@ -54,7 +54,7 @@ import com.gasczoology.varugai.ui.theme.VarugaiTheme
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
+        if (!BuildConfig.DEBUG) window.addFlags(WindowManager.LayoutParams.FLAG_SECURE)
         val app = application as VarugaiApplication
         setContent {
             VarugaiTheme {
