@@ -159,7 +159,7 @@ private fun VarugaiApp(
             TopAppBar(
                 title = {
                     androidx.compose.foundation.layout.Column {
-                        Text("VARUGAI 16")
+                        Text("VARUGAI ${BuildConfig.VERSION_NAME}")
                         Text("Semester attendance grid", style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                     }
                 },
@@ -258,6 +258,7 @@ private fun VarugaiApp(
                     onCancelRestore = exportViewModel::cancelRestore,
                     onCommitRestore = exportViewModel::commitRestore,
                     onCreateBackup = exportViewModel::encryptedBackupText,
+                    onBackupSucceeded = exportViewModel::markBackupSuccessful,
                     onShowRecoveryKey = exportViewModel::showRecoveryKey,
                     onHideRecoveryKey = exportViewModel::hideRecoveryKey,
                     onSubmitRecoveryKey = exportViewModel::submitRecoveryKeyForRestore,
