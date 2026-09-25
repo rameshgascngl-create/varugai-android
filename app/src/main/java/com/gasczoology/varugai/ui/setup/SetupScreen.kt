@@ -46,6 +46,7 @@ fun SetupScreen(
     onGenerateCalendar: (RegisterEntity, Set<Int>) -> Unit,
     onCopyCalendar: (String, String) -> Unit,
     onUpdateTeachingDay: (TeachingDayEntity) -> Unit,
+    onMarkHoliday: (String, String) -> Unit,
     onAddWorkingDay: (String, Int) -> Unit,
     onSetDayOfWeekWorking: (Int, Boolean) -> Unit,
     modifier: Modifier = Modifier,
@@ -183,16 +184,25 @@ fun SetupScreen(
                     if (state.teachingDays.isNotEmpty() && !specialDayInSemester) Text("Choose a date inside the generated semester calendar.", color = MaterialTheme.colorScheme.error)
                     Text("Festival / weekday holiday within the selected semester", style = MaterialTheme.typography.titleSmall)
                     DateDropdownPicker("Holiday date", holidayDate) { holidayDate = it }
-                    Field("Holiday / festival name", holidayName) { holidayName = it }
+                    Field("Holiday / festival name (optional)", holidayName) { holidayName = it }
                     val holidayDay = state.teachingDays.firstOrNull { it.date == holidayDate }
                     Button(
-                        enabled = holidayDay != null && holidayName.isNotBlank(),
+                        enabled = holidayDay != null,
                         onClick = {
-                            holidayDay?.let { onUpdateTeachingDay(it.copy(isWorking = false, isComplete = false, note = holidayName.trim())) }
+                            onMarkHoliday(holidayDate, holidayName)
                             holidayName = ""
                         },
                     ) { Text("Mark selected date as holiday") }
-                    if (state.teachingDays.isEmpty()) Text("Generate the calendar first, then add festival/weekday holidays inside the chosen date range.")
+                    when {
+                        state.teachingDays.isEmpty() ->
+                            Text("Generate the calendar first, then select a festival/weekday holiday.")
+                        holidayDay == null ->
+                            Text("Choose a date inside the generated semester calendar.", color = MaterialTheme.colorScheme.error)
+                        holidayDay.isWorking ->
+                            Text("Selected date is in the semester calendar. Holiday name is optional.")
+                        else ->
+                            Text("Selected date is already non-working" + if (holidayDay.note.isNotBlank()) ": ${holidayDay.note}" else ".")
+                    }
                 }
             }
         }
