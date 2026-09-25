@@ -3,7 +3,7 @@ name: VARUGAI 16 Native Phase Gate
 on:
   workflow_dispatch:
   push:
-    branches: [ release/varugai-native-v16, audit/v16-parity-hardening, audit/v16-encrypted-backup-recovery-key, audit/v16.0.1-festival-holiday-fix ]
+    branches: [ release/varugai-native-v16, audit/v16-parity-hardening, audit/v16-encrypted-backup-recovery-key, audit/v16.0.1-festival-holiday-fix, audit/v16.0.2-final-production-hardening ]
 
 permissions:
   contents: read
@@ -103,7 +103,7 @@ jobs:
 
       - uses: actions/upload-artifact@v4
         with:
-          name: VARUGAI-16.0.0-phase5-debug
+          name: VARUGAI-16.0.2-final-hardening-debug
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/reports/tests/
