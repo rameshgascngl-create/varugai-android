@@ -147,6 +147,14 @@ object RosterFileParser {
     fun validateRows(rows: List<RosterImportRow>) {
         val duplicateRolls = rows.groupBy { it.roll.trim() }.filterKeys { it.isNotBlank() }.filterValues { it.size > 1 }.keys
         require(duplicateRolls.isEmpty()) { "Duplicate roll number(s): ${duplicateRolls.take(6).joinToString()}" }
+        val duplicateRegisterNumbers = rows
+            .filter { it.registerNumber.isNotBlank() }
+            .groupBy { it.registerNumber.trim().uppercase(Locale.ROOT) }
+            .filterValues { it.size > 1 }
+            .keys
+        require(duplicateRegisterNumbers.isEmpty()) {
+            "Duplicate register number(s): ${duplicateRegisterNumbers.take(6).joinToString()}"
+        }
         require(rows.none { it.roll.isBlank() || it.name.isBlank() }) { "Every student must have a roll number and name." }
     }
 
