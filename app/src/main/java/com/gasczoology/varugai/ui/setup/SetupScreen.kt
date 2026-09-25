@@ -78,7 +78,7 @@ fun SetupScreen(
     ) {
         item {
             Text("Register setup", style = MaterialTheme.typography.headlineSmall)
-            Text("Native VARUGAI 16 · local Room database · no WebView or camera subsystem")
+            Text("Native VARUGAI 16.0.2 · local encrypted Room database · no WebView or camera subsystem")
         }
 
         item {
@@ -128,13 +128,14 @@ fun SetupScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Attendance rules", style = MaterialTheme.typography.titleMedium)
+                    Text("These thresholds are configurable institutional settings. VARUGAI does not treat them as universal rules; record the applicable university/institution in the Rule-set label.")
                     DoubleField("Eligible threshold (%)", edit.passMark, 0.0, 100.0) { edit = edit.copy(passMark = it) }
                     DoubleField("Condonation + fee floor (%)", edit.condonationFeeFloor, 0.0, 100.0) { edit = edit.copy(condonationFeeFloor = it) }
                     DoubleField("Condonation + fee + medical floor (%)", edit.condonationMedicalFloor, 0.0, 100.0) { edit = edit.copy(condonationMedicalFloor = it) }
                     DoubleField("Verify band (percentage points)", edit.verifyBandPoints, 0.0, 20.0) { edit = edit.copy(verifyBandPoints = it) }
                     IntField("Minimum counted hours before percentage", edit.minimumCountedHours, 0, 1000) { edit = edit.copy(minimumCountedHours = it) }
                     Field("Rule-set label", edit.ruleSetLabel) { edit = edit.copy(ruleSetLabel = it) }
-                    Text("Classification is performed on the unrounded percentage. Display rounding must not change eligibility.")
+                    Text("Required order: medical floor ≤ fee floor ≤ eligible threshold. Classification uses the unrounded percentage; display rounding does not change eligibility.")
                 }
             }
         }
