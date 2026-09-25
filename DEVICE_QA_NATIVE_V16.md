@@ -1,4 +1,4 @@
-# VARUGAI 16 — Native Device QA Gate
+# VARUGAI 16.0.2 — Native Device QA Gate
 
 This checklist is release-blocking. Perform it on at least one real Android phone before merging the native branch to `main`.
 
@@ -52,27 +52,48 @@ This checklist is release-blocking. Perform it on at least one real Android phon
 - Verify later-admission students do not receive denominator hours before their Counts from date.
 
 ## 6. Export / backup
-- Export XLSX, CSV, PDF and JSON.
-- Open each exported file independently.
-- Restore a VARUGAI 16 JSON backup and compare roster, calendar, marks and totals.
+- Export XLSX, CSV, PDF and audit CSV; confirm the unencrypted-export privacy warning is visible.
+- Open each exported file independently and confirm it contains no PIN, database key or recovery key.
+- Create and record the VARUGAI recovery key, then export an encrypted backup.
+- Restore that encrypted backup on the same device and compare roster, calendar, marks and totals.
+- Perform replacement-device style recovery: uninstall/reinstall or use a second clean device, import the encrypted backup, enter the written recovery key, and compare the restored data.
+- Enter a wrong recovery key and confirm restore is rejected without modifying current data.
+- Tamper with/truncate an encrypted backup and confirm it is rejected with a generic safe error.
 - Test one verified VARUGAI 15.x schema-2 backup.
-- Confirm a corrupted/edited backup is rejected without damaging current data.
-- Confirm restore requires confirmation.
+- Test one older unencrypted VARUGAI 16 schema-3 backup.
+- Confirm a checksum-modified backup is rejected without damaging current data.
+- Confirm restore requires preview and confirmation.
 
 ## 7. Android UI robustness
 - Test portrait and landscape repeatedly.
 - Test gesture navigation and three-button navigation; bottom Setup · Roster · Grid · Summary · Export bar must remain visible.
-- Test system font sizes 100%, 130% and 150%.
+- Test system font sizes 100%, 130%, 150% and 200%.
+- Test the screen-reader-friendly selected-day attendance view with TalkBack; each cell must announce student, date, hour, state and action.
+- Test on a small phone, large phone, 8-inch tablet and 10-inch tablet where available.
+- Test split-screen/multi-window mode where the device supports it.
 - Test keyboard opening/closing in Setup, Roster and search fields.
 - Confirm Back dismisses dialogs/keyboard before leaving the current screen where appropriate.
 - Confirm no clipping at status/navigation bars and no content hidden behind system UI.
 
-## 8. Stress / offline
+## 8. Process death / restart
+- Unlock the app, background it beyond the configured timeout and confirm it relocks.
+- Force-stop the app and relaunch; protected attendance content must not appear before unlock.
+- Rotate during PIN entry and while unlocked; the lock must not be bypassed.
+- After a successful restore, kill and relaunch the process and verify the restored register remains intact.
+- Reboot the device and verify the same persistence and lock behavior.
+
+## 9. Stress / offline
 - Test at least 150 students and 90 working days.
 - Drag across the semester repeatedly and rapidly enter attendance for several days.
 - Switch tabs repeatedly, rotate the device and background/foreground the app.
 - Use Airplane mode throughout; all core functions must continue to work.
 - No freeze, app close, ANR, lost marks or visibly desynchronised grid is acceptable.
+
+## 10. Play / installation validation
+- Install the exact signed APK produced by the audited commit.
+- Perform an upgrade install over the previously deployed VARUGAI release and verify data preservation.
+- Record Google Play Console pre-launch report results for the AAB.
+- Record any accessibility, crash, ANR, security or compatibility findings and resolve blockers.
 
 ## Release decision
 Only after every applicable item passes:
