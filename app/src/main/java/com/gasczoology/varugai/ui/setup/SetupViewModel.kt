@@ -131,6 +131,16 @@ class SetupViewModel(
         }
     }
 
+    fun markHoliday(date: String, name: String) = viewModelScope.launch {
+        val id = selectedId.value ?: return@launch
+        try {
+            repository.markHoliday(id, date, name)
+            message.value = "Holiday saved"
+        } catch (t: Throwable) {
+            message.value = t.message ?: "Could not mark holiday"
+        }
+    }
+
     fun addWorkingDay(date: String, hours: Int) = viewModelScope.launch {
         val id = selectedId.value ?: return@launch
         try {
