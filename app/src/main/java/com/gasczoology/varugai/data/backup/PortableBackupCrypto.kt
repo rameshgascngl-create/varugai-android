@@ -107,17 +107,15 @@ object PortableBackupCrypto {
             val salt = b64d(root.getValue("salt").jsonPrimitive.content)
             val iv = b64d(root.getValue("iv").jsonPrimitive.content)
             val ciphertext = b64d(root.getValue("ciphertext").jsonPrimitive.content)
-            require(salt.size == SALT_BYTES && iv.size == IV_BYTES) { "Encrypted backup parameters are invalid." }
+            require(salt.size == SALT_BYTES && iv.size == IV_BYTES)
 
             val key = deriveAesKey(normalized, salt)
             val cipher = Cipher.getInstance("AES/GCM/NoPadding")
             cipher.init(Cipher.DECRYPT_MODE, SecretKeySpec(key, "AES"), GCMParameterSpec(128, iv))
             cipher.updateAAD(AAD.toByteArray(Charsets.UTF_8))
             cipher.doFinal(ciphertext).toString(Charsets.UTF_8)
-        } catch (e: IllegalArgumentException) {
-            throw e
         } catch (_: Exception) {
-            error("Recovery key is incorrect or the encrypted backup is damaged.")
+            error("Encrypted backup could not be opened. The recovery key may be incorrect or the file may be damaged.")
         }
     }
 
