@@ -72,8 +72,8 @@ jobs:
       - name: Lint
         run: ./gradlew --no-daemon lintDebug lintRelease
 
-      - name: Compile native debug and unsigned release audit APKs
-        run: ./gradlew --no-daemon assembleDebug assembleRelease
+      - name: Compile native debug, Android tests and unsigned release audit APKs
+        run: ./gradlew --no-daemon assembleDebug assembleDebugAndroidTest assembleRelease
 
       - name: Audit release variant
         run: |
