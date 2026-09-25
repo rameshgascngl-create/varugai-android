@@ -22,6 +22,7 @@ data class SetupUiState(
     val current: RegisterEntity? = null,
     val selectedWeekdays: Set<Int> = setOf(1, 2, 3, 4, 5),
     val teachingDays: List<TeachingDayEntity> = emptyList(),
+    val lastFullBackupAt: Long? = null,
     val message: String? = null,
 )
 
@@ -34,13 +35,17 @@ class SetupViewModel(
     private val teachingDays = selectedId.flatMapLatest { id ->
         if (id == null) flowOf(emptyList()) else repository.observeTeachingDays(id)
     }
+    private val lastFullBackupAt = selectedId.flatMapLatest { id ->
+        if (id == null) flowOf(null) else preferences.lastFullBackupAt(id)
+    }
 
     val uiState: StateFlow<SetupUiState> = combine(
         repository.registers,
         selectedId,
         teachingDays,
+        lastFullBackupAt,
         message,
-    ) { registers, chosenId, days, msg ->
+    ) { registers, chosenId, days, backupAt, msg ->
         val current = registers.firstOrNull { it.id == chosenId } ?: registers.firstOrNull()
         SetupUiState(
             registers = registers,
@@ -52,6 +57,7 @@ class SetupViewModel(
                 ?.takeIf { it.isNotEmpty() }
                 ?: setOf(1, 2, 3, 4, 5),
             teachingDays = days,
+            lastFullBackupAt = backupAt,
             message = msg,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), SetupUiState())
