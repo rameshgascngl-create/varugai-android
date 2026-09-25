@@ -290,11 +290,15 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         require(cleanName.isNotBlank()) { "Student name is required." }
         validateOptionalDates(admissionDate, attendanceEndDate)
         require(existing.none { it.roll == cleanRoll }) { "Roll number $cleanRoll already exists." }
+        val cleanRegisterNumber = registerNumber.trim()
+        require(cleanRegisterNumber.isBlank() || existing.none { it.registerNumber.equals(cleanRegisterNumber, ignoreCase = true) }) {
+            "Register number $cleanRegisterNumber already exists."
+        }
         val student = StudentEntity(
             registerId = registerId,
             sid = newStudentId(),
             roll = cleanRoll,
-            registerNumber = registerNumber.trim(),
+            registerNumber = cleanRegisterNumber,
             name = cleanName,
             admissionDate = admissionDate.trim(),
             attendanceEndDate = attendanceEndDate.trim(),
@@ -326,6 +330,9 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         validateOptionalDates(clean.admissionDate, clean.attendanceEndDate)
         val existing = db.studentDao().getForRegister(clean.registerId)
         require(existing.none { it.sid != clean.sid && it.roll == clean.roll }) { "Roll number ${clean.roll} already exists." }
+        require(clean.registerNumber.isBlank() || existing.none {
+            it.sid != clean.sid && it.registerNumber.equals(clean.registerNumber, ignoreCase = true)
+        }) { "Register number ${clean.registerNumber} already exists." }
         val before = db.studentDao().getBySid(clean.registerId, clean.sid)
             ?: error("Student not found.")
         db.studentDao().upsert(clean)
@@ -387,6 +394,14 @@ class VarugaiRepository(private val db: VarugaiDatabase) {
         require(cleaned.none { it.roll.isBlank() || it.name.isBlank() }) { "Every row needs a roll number and name." }
         val duplicateRolls = cleaned.groupBy { it.roll }.filterValues { it.size > 1 }.keys
         require(duplicateRolls.isEmpty()) { "Duplicate roll number(s): ${duplicateRolls.take(6).joinToString()}" }
+        val duplicateRegisterNumbers = cleaned
+            .filter { it.registerNumber.isNotBlank() }
+            .groupBy { it.registerNumber.uppercase(Locale.ROOT) }
+            .filterValues { it.size > 1 }
+            .keys
+        require(duplicateRegisterNumbers.isEmpty()) {
+            "Duplicate register number(s): ${duplicateRegisterNumbers.take(6).joinToString()}"
+        }
         cleaned.forEach { validateOptionalDates(it.admissionDate, it.attendanceEndDate) }
 
         val existing = db.studentDao().getForRegister(registerId)
