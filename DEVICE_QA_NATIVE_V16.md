@@ -13,7 +13,10 @@ This checklist is release-blocking. Perform it on at least one real Android phon
 - Confirm an invalid end-before-start range cannot generate a calendar.
 - Choose Total hours per day in Setup from 1–8 and confirm newly generated working days inherit it.
 - Generate a semester calendar spanning at least 60 calendar days.
-- Mark a weekday inside the range as a named festival/holiday; confirm the name remains visible and the day is excluded from attendance.
+- Select a weekday inside the generated range and confirm **Mark selected date as holiday** becomes enabled immediately after date selection; the holiday/festival name is optional.
+- Mark it as a holiday with the name left blank and confirm the default label "Festival / holiday" is stored and the day is excluded from attendance.
+- Mark another weekday as a named festival/holiday and confirm the custom name remains visible.
+- On a day that already contains attendance, confirm holiday conversion is blocked with an instruction to clear that day's attendance first.
 - Convert one weekend date inside the range into a special working day and choose different hours.
 - Confirm a date outside the semester cannot be added as a special working day.
 - Confirm Semester plan totals update after holiday/working-day changes.
