@@ -16,11 +16,15 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.semantics.LiveRegionMode
+import androidx.compose.ui.semantics.liveRegion
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
@@ -46,6 +50,13 @@ fun LockScreen(
     var pin by remember(state.pinConfigured, state.settingsMode) { mutableStateOf("") }
     var confirmation by remember(state.pinConfigured, state.settingsMode) { mutableStateOf("") }
     var timeout by remember(state.timeoutSeconds, state.settingsMode) { mutableStateOf(state.timeoutSeconds) }
+
+    LaunchedEffect(state.message) {
+        if (state.message != null) {
+            pin = ""
+            confirmation = ""
+        }
+    }
 
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         Column(
@@ -79,6 +90,7 @@ fun LockScreen(
 
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     Button(
+                        enabled = state.retryAfterSeconds == 0,
                         onClick = {
                             if (state.settingsMode) onSaveSettings(pin, confirmation, timeout)
                             else onSetupPin(pin, confirmation, timeout)
@@ -97,17 +109,24 @@ fun LockScreen(
                     label = "PIN",
                 )
                 Text("Auto-lock after ${timeoutLabel(state.timeoutSeconds)} in the background.")
+                if (state.retryAfterSeconds > 0) Text("Try again in about ${state.retryAfterSeconds} second(s).")
                 Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Button(onClick = { onUnlock(pin) }, enabled = pin.length >= 4) { Text("Unlock") }
-                    OutlinedButton(onClick = { onOpenSettings(pin) }, enabled = pin.length >= 4) {
+                    Button(onClick = { onUnlock(pin) }, enabled = pin.length >= 4 && state.retryAfterSeconds == 0) { Text("Unlock") }
+                    OutlinedButton(onClick = { onOpenSettings(pin) }, enabled = pin.length >= 4 && state.retryAfterSeconds == 0) {
                         Text("Security settings")
                     }
                 }
             }
 
-            state.message?.let { Text(it, color = MaterialTheme.colorScheme.error) }
+            state.message?.let {
+                Text(
+                    it,
+                    color = MaterialTheme.colorScheme.error,
+                    modifier = Modifier.semantics { liveRegion = LiveRegionMode.Assertive },
+                )
+            }
             Text(
-                "PIN verification is protected by Android Keystore. Attendance remains stored only on this device unless you explicitly export it.",
+                "PIN verification is protected by Android Keystore. Repeated failed attempts are rate-limited. Attendance remains stored only on this device unless you explicitly export it.",
                 style = MaterialTheme.typography.bodySmall,
             )
         }
