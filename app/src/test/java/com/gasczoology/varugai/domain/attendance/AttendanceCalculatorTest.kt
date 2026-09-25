@@ -7,6 +7,7 @@ import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.time.LocalDate
 
 class AttendanceCalculatorTest {
     private val student = StudentEntity("r1", "s1", "1", "", "Arun", "", "", 0)
@@ -74,4 +75,46 @@ class AttendanceCalculatorTest {
         assertEquals(1, check.enteredCells)
         assertEquals(1, check.missingCells)
     }
+
+    @Test fun ninetyPlannedDaysButOnlyTwentyCompletedCountExactlyOneHundredHours() {
+        val workingDays = generateSequence(LocalDate.parse("2026-07-01")) { it.plusDays(1) }
+            .filter { it.dayOfWeek.value in 1..5 }
+            .take(90)
+            .toList()
+        val days = workingDays.mapIndexed { index, d ->
+            TeachingDayEntity("r1", d.toString(), 5, true, index < 20)
+        }
+        val marks = days.take(20).flatMap { day ->
+            (1..5).map { hour -> AttendanceMarkEntity("r1", day.date, "s1", hour, "P") }
+        }
+        val t = AttendanceCalculator.totals(student, days, marks)
+        assertEquals(100, t.countedHours)
+        assertEquals(100.0, t.percentage!!, 0.0001)
+    }
+
+    @Test fun attendanceEndDateIsInclusiveAndExcludesLaterCompletedDays() {
+        val leaving = student.copy(attendanceEndDate = "2026-07-10")
+        assertTrue(AttendanceCalculator.isActiveOn(leaving, "2026-07-10"))
+        assertFalse(AttendanceCalculator.isActiveOn(leaving, "2026-07-11"))
+        val days = listOf(
+            TeachingDayEntity("r1", "2026-07-10", 5, true, true),
+            TeachingDayEntity("r1", "2026-07-11", 5, true, true),
+        )
+        val marks = (1..5).map { AttendanceMarkEntity("r1", "2026-07-10", "s1", it, "P") }
+        assertEquals(5, AttendanceCalculator.totals(leaving, days, marks).countedHours)
+    }
+
+    @Test fun changingRollAndRegisterNumberDoesNotDetachMarksFromStableSid() {
+        val renamedIdentity = student.copy(roll = "99", registerNumber = "24Z099")
+        val day = TeachingDayEntity("r1", "2026-07-12", 2, true, true)
+        val marks = listOf(
+            AttendanceMarkEntity("r1", day.date, "s1", 1, "P"),
+            AttendanceMarkEntity("r1", day.date, "s1", 2, "O"),
+        )
+        val t = AttendanceCalculator.totals(renamedIdentity, listOf(day), marks)
+        assertEquals(2, t.countedHours)
+        assertEquals(2, t.attendedHours)
+        assertEquals(100.0, t.percentage!!, 0.0001)
+    }
+
 }

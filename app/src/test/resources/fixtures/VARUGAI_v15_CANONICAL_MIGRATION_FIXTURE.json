@@ -1,0 +1,878 @@
+{
+ "format": "varugai-backup",
+ "schema": 2,
+ "appVersion": "15.1.0",
+ "created": "2026-09-25T01:15:00.000Z",
+ "register": "VARUGAI-QA · I B.Sc. Zoology · I",
+ "students": 10,
+ "checksum": "c07a00d3",
+ "data": {
+  "meta": {
+   "defHours": 5,
+   "passMark": 75,
+   "condFee": 65,
+   "condMed": 50,
+   "bandPts": 3,
+   "minHours": 50,
+   "institution": "Government Arts and Science College, Nagercoil",
+   "department": "Zoology",
+   "faculty": "Migration QA Fixture",
+   "className": "I B.Sc. Zoology",
+   "semester": "I",
+   "acadYear": "2026-2027",
+   "courseCode": "VARUGAI-QA",
+   "courseTitle": "Synthetic v15 to v16 Migration Parity Fixture",
+   "rulesetLabel": "MSU attendance: 75 / 65 / 50",
+   "startDate": "2026-07-01",
+   "endDate": "2026-11-03"
+  },
+  "days": {
+   "2026-07-01": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-02": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-03": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-06": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-07": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-08": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-09": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-10": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-13": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-14": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-15": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-16": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-17": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-20": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-21": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-22": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-23": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-24": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-27": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-28": {
+    "hours": 5,
+    "on": true,
+    "done": true,
+    "note": ""
+   },
+   "2026-07-29": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-07-30": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-07-31": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-03": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-04": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-05": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-06": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-07": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-10": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-11": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-12": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-13": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-14": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-17": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-18": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-19": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-20": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-21": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-24": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-25": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-26": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-27": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-28": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-08-31": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-01": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-02": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-03": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-04": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-07": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-08": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-09": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-10": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-11": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-14": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-15": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-16": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-17": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-18": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-21": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-22": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-23": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-24": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-25": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-28": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-29": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-09-30": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-01": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-02": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-05": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-06": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-07": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-08": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-09": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-12": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-13": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-14": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-15": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-16": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-19": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-20": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-21": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-22": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-23": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-26": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-27": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-28": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-29": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-10-30": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-11-02": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   },
+   "2026-11-03": {
+    "hours": 5,
+    "on": true,
+    "done": false,
+    "note": ""
+   }
+  },
+  "roster": [
+   {
+    "sid": "SQA001",
+    "roll": "1",
+    "regno": "QA001",
+    "name": "அருண்",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA002",
+    "roll": "2",
+    "regno": "QA002",
+    "name": "Boundary 75",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA003",
+    "roll": "3",
+    "regno": "QA003",
+    "name": "Near 74",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA004",
+    "roll": "4",
+    "regno": "QA004",
+    "name": "Boundary 65",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA005",
+    "roll": "5",
+    "regno": "QA005",
+    "name": "Below 65",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA006",
+    "roll": "6",
+    "regno": "QA006",
+    "name": "Boundary 50",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA007",
+    "roll": "7",
+    "regno": "QA007",
+    "name": "Below 50",
+    "from": "",
+    "to": ""
+   },
+   {
+    "sid": "SQA008",
+    "roll": "8",
+    "regno": "QA008",
+    "name": "Late Admission",
+    "from": "2026-07-10",
+    "to": ""
+   },
+   {
+    "sid": "SQA009",
+    "roll": "9",
+    "regno": "QA009",
+    "name": "Early Leaving",
+    "from": "",
+    "to": "2026-07-09"
+   },
+   {
+    "sid": "SQA010",
+    "roll": "10",
+    "regno": "QA010",
+    "name": "All OD",
+    "from": "",
+    "to": ""
+   }
+  ],
+  "marks": {
+   "2026-07-01": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-02": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-03": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-06": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-07": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-08": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-09": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA009": "PPPPP"
+   },
+   "2026-07-10": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPP",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-13": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "PPPPP",
+    "SQA007": "PPPPO",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-14": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "OOOOO",
+    "SQA007": "OOOOA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-15": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-16": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "PPPPP",
+    "SQA005": "PPPPP",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-17": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "OOOOO",
+    "SQA005": "OOOOA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-20": {
+    "SQA001": "PPPPP",
+    "SQA002": "PPPPP",
+    "SQA003": "PPPPP",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-21": {
+    "SQA001": "PPPPP",
+    "SQA002": "OOOOO",
+    "SQA003": "OOOOA",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-22": {
+    "SQA001": "PPPPP",
+    "SQA002": "AAAAA",
+    "SQA003": "AAAAA",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-23": {
+    "SQA001": "PPPPP",
+    "SQA002": "AAAAA",
+    "SQA003": "AAAAA",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-24": {
+    "SQA001": "PPPPP",
+    "SQA002": "AAAAA",
+    "SQA003": "AAAAA",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-27": {
+    "SQA001": "PPPPP",
+    "SQA002": "AAAAA",
+    "SQA003": "AAAAA",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   },
+   "2026-07-28": {
+    "SQA001": "PPPPP",
+    "SQA002": "AAAAA",
+    "SQA003": "AAAAA",
+    "SQA004": "AAAAA",
+    "SQA005": "AAAAA",
+    "SQA006": "AAAAA",
+    "SQA007": "AAAAA",
+    "SQA010": "OOOOO",
+    "SQA008": "PPPPP"
+   }
+  },
+  "audit": [],
+  "schema": 2
+ }
+}

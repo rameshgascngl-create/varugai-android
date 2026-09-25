@@ -48,6 +48,9 @@ jobs:
           ./tools/audit-native-ux-hardening.sh
           ./tools/audit-required-corrections.sh
 
+      - name: Golden v15 to v16 migration parity
+        run: ./gradlew --no-daemon testDebugUnitTest --tests 'com.gasczoology.varugai.data.backup.LegacyMigrationGoldenTest'
+
       - name: Unit tests and lint
         run: |
           ./gradlew --no-daemon testDebugUnitTest
