@@ -23,22 +23,22 @@ Architecture:
 
 Identity:
 - package: `com.gasczoology.varugai`
-- target version: `16.0.1`
-- target versionCode: `16001`
+- target version: `16.0.2`
+- target versionCode: `16002`
 
 The production release workflow is intentionally locked. It may be enabled only after the Phase-5 CI gate passes, the production signer is verified against the existing certificate, and physical-device QA is signed off.
 
 
-## Security and scope decisions for 16.0.1
+## Security and scope decisions for 16.0.2
 
 - **Release signing:** production updates must use the existing VARUGAI production/upload key. Do not generate a replacement key for this package. CI rejects any release whose signer SHA-256 is not `A41E9DE248E95594868AE5740A492D35D35950AF644CD7EF190C731649826B9B`.
 - **Release hardening:** the release build is non-debuggable, R8/minification and resource shrinking are mandatory, and production signing credentials are supplied only through local ignored properties or CI secrets.
 - **Database at rest:** Room is backed by SQLCipher. The SQLCipher passphrase is derived at runtime by HMAC-SHA256 from a non-exportable Android Keystore key; no reusable database password is hardcoded or stored in app files.
 - **App access lock:** cold start is PIN-gated. Returning from background after the user-selected timeout (15 s, 30 s, 1 min, 5 min, or 15 min) re-locks the app. The PIN verifier is protected by a non-exportable Android Keystore HMAC key.
 - **Screen capture:** `FLAG_SECURE` is applied at the activity level so roster, grid, summary, and export data are not available to screenshots/screen recording.
-- **Notifications/reminders:** not a VARUGAI 16.0.1 feature. There is no app-owned `NotificationManagerCompat`, `AlarmManager`, exact-alarm permission, boot receiver, or reminder workflow. Do not add notification/alarm permissions merely because dependency classes appear in a debug DEX.
+- **Notifications/reminders:** not a VARUGAI 16.0.2 feature. There is no app-owned `NotificationManagerCompat`, `AlarmManager`, exact-alarm permission, boot receiver, or reminder workflow. Do not add notification/alarm permissions merely because dependency classes appear in a debug DEX.
 - **Scan verification:** this means **roster-import validation**, not camera/QR roll call. CameraX, ML Kit barcode scanning, photo capture, QR attendance, OCR, and CAMERA permission are intentionally out of scope. Import validation rejects malformed/duplicate rows and previews roster-size/omission effects before commit; students with existing attendance cannot be silently removed.
-- **Sync:** VARUGAI 16.0.1 is permanently **offline-only by design**. It does not communicate with the hosted web application. User-controlled JSON/XLSX/CSV/PDF export and JSON restore are the supported transfer/backup mechanism.
+- **Sync:** VARUGAI 16.0.2 is permanently **offline-only by design**. It does not communicate with the hosted web application. User-controlled JSON/XLSX/CSV/PDF export and JSON restore are the supported transfer/backup mechanism.
 - **Android backup:** `allowBackup=false`; cloud/ADB automatic backup rule files are intentionally absent. Device migration is performed through explicit encrypted-at-rest local data plus user-controlled export/import.
-- **Localisation:** 16.0.1 UI chrome remains English-only for this release. Tamil UI localisation is deferred rather than partially shipping an inconsistent bilingual surface.
+- **Localisation:** 16.0.2 UI chrome remains English-only for this release. Tamil UI localisation is deferred rather than partially shipping an inconsistent bilingual surface.
 
