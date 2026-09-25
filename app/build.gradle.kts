@@ -32,8 +32,8 @@ android {
         applicationId = "com.gasczoology.varugai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16001
-        versionName = "16.0.1"
+        versionCode = 16002
+        versionName = "16.0.2"
         resourceConfigurations += listOf("en")
     }
 
@@ -78,6 +78,21 @@ android {
         targetCompatibility = JavaVersion.VERSION_17
     }
     kotlinOptions { jvmTarget = "17" }
+
+    splits {
+        abi {
+            isEnable = true
+            reset()
+            include("arm64-v8a", "armeabi-v7a")
+            isUniversalApk = true
+        }
+    }
+
+    bundle {
+        abi {
+            enableSplit = true
+        }
+    }
 
     packaging {
         resources.excludes += setOf("/META-INF/{AL2.0,LGPL2.1}")
@@ -129,6 +144,10 @@ dependencies {
 
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.8.1")
+    androidTestImplementation("androidx.test.ext:junit:1.2.1")
+    androidTestImplementation("androidx.test:runner:1.6.2")
+    androidTestImplementation("androidx.room:room-testing:2.6.1")
+    androidTestImplementation("androidx.compose.ui:ui-test-junit4")
 }
 
 tasks.register("signingReport2") {
