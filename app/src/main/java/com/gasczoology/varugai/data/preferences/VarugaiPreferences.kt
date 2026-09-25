@@ -3,6 +3,7 @@ package com.gasczoology.varugai.data.preferences
 import android.content.Context
 import androidx.datastore.preferences.core.edit
 import androidx.datastore.preferences.core.intPreferencesKey
+import androidx.datastore.preferences.core.longPreferencesKey
 import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.datastore.preferences.preferencesDataStore
 import kotlinx.coroutines.flow.Flow
@@ -17,6 +18,8 @@ class VarugaiPreferences(private val context: Context) {
         val gridWindowSize = intPreferencesKey("grid_window_size")
         val pinDigest = stringPreferencesKey("lock_pin_digest")
         val lockTimeoutSeconds = intPreferencesKey("lock_timeout_seconds")
+        val pinFailedAttempts = intPreferencesKey("lock_pin_failed_attempts")
+        val pinLockoutUntilEpochMs = longPreferencesKey("lock_pin_lockout_until_epoch_ms")
     }
 
     val currentRegisterId: Flow<String?> = context.varugaiDataStore.data.map { it[Keys.currentRegisterId] }
@@ -24,6 +27,8 @@ class VarugaiPreferences(private val context: Context) {
     val gridWindowSize: Flow<Int> = context.varugaiDataStore.data.map { it[Keys.gridWindowSize] ?: 5 }
     val pinDigest: Flow<String?> = context.varugaiDataStore.data.map { it[Keys.pinDigest] }
     val lockTimeoutSeconds: Flow<Int> = context.varugaiDataStore.data.map { it[Keys.lockTimeoutSeconds] ?: 60 }
+    val pinFailedAttempts: Flow<Int> = context.varugaiDataStore.data.map { it[Keys.pinFailedAttempts] ?: 0 }
+    val pinLockoutUntilEpochMs: Flow<Long> = context.varugaiDataStore.data.map { it[Keys.pinLockoutUntilEpochMs] ?: 0L }
 
     suspend fun setCurrentRegisterId(id: String) {
         context.varugaiDataStore.edit { it[Keys.currentRegisterId] = id }
@@ -45,4 +50,13 @@ class VarugaiPreferences(private val context: Context) {
         require(seconds in setOf(15, 30, 60, 300, 900)) { "Unsupported lock timeout." }
         context.varugaiDataStore.edit { it[Keys.lockTimeoutSeconds] = seconds }
     }
+
+    suspend fun setPinAttemptState(failedAttempts: Int, lockoutUntilEpochMs: Long) {
+        context.varugaiDataStore.edit {
+            it[Keys.pinFailedAttempts] = failedAttempts.coerceAtLeast(0)
+            it[Keys.pinLockoutUntilEpochMs] = lockoutUntilEpochMs.coerceAtLeast(0L)
+        }
+    }
+
+    suspend fun clearPinAttemptState() = setPinAttemptState(0, 0L)
 }
