@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 
-private const val PRIVACY_URL = "https://rameshgascngl-create.github.io/varugai-android/privacy-policy.html"
+private const val PRIVACY_URL = "https://github.com/rameshgascngl-create/varugai-android/blob/audit/v16.0.2-final-production-hardening/PRIVACY_POLICY.md"
 private const val SUPPORT_URL = "https://github.com/rameshgascngl-create/varugai-android/issues"
 
 @Composable
