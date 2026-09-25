@@ -10,7 +10,6 @@ import kotlinx.serialization.json.put
 import java.security.MessageDigest
 import java.security.SecureRandom
 import java.time.Instant
-import java.util.Base64
 import java.util.Locale
 import javax.crypto.Cipher
 import javax.crypto.Mac
@@ -134,11 +133,46 @@ object PortableBackupCrypto {
         return expand.doFinal()
     }
 
-    private fun b64(bytes: ByteArray): String =
-        Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+    private const val BASE64_URL_ALPHABET =
+        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_"
 
-    private fun b64d(value: String): ByteArray =
-        Base64.getUrlDecoder().decode(value)
+    private fun b64(bytes: ByteArray): String {
+        val out = StringBuilder((bytes.size * 4 + 2) / 3)
+        var i = 0
+        while (i < bytes.size) {
+            val b0 = bytes[i++].toInt() and 0xff
+            val b1 = if (i < bytes.size) bytes[i++].toInt() and 0xff else -1
+            val b2 = if (i < bytes.size) bytes[i++].toInt() and 0xff else -1
+
+            out.append(BASE64_URL_ALPHABET[b0 ushr 2])
+            out.append(BASE64_URL_ALPHABET[((b0 and 0x03) shl 4) or (if (b1 >= 0) b1 ushr 4 else 0)])
+            if (b1 >= 0) {
+                out.append(BASE64_URL_ALPHABET[((b1 and 0x0f) shl 2) or (if (b2 >= 0) b2 ushr 6 else 0)])
+            }
+            if (b2 >= 0) out.append(BASE64_URL_ALPHABET[b2 and 0x3f])
+        }
+        return out.toString()
+    }
+
+    private fun b64d(value: String): ByteArray {
+        require(value.length % 4 != 1) { "Encrypted backup contains invalid Base64 data." }
+        val out = java.io.ByteArrayOutputStream((value.length * 3) / 4)
+        var buffer = 0
+        var bits = 0
+        value.forEach { ch ->
+            val v = BASE64_URL_ALPHABET.indexOf(ch)
+            require(v >= 0) { "Encrypted backup contains invalid Base64 data." }
+            buffer = (buffer shl 6) or v
+            bits += 6
+            if (bits >= 8) {
+                bits -= 8
+                out.write((buffer ushr bits) and 0xff)
+                buffer = if (bits == 0) 0 else buffer and ((1 shl bits) - 1)
+            }
+        }
+        require(buffer == 0) { "Encrypted backup contains non-canonical Base64 data." }
+        return out.toByteArray()
+    }
 
     fun recoveryKeyFingerprint(recoveryKey: String): String {
         val normalized = RecoveryKeyFormat.requireValid(recoveryKey)
