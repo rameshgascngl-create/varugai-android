@@ -51,6 +51,24 @@ class BackupCodecTest {
     }
 
     @Test
+    fun nativeBackupRejectsDuplicateRegisterNumbers() {
+        val bundle = RegisterBundle(
+            RegisterEntity(id = "r1"),
+            listOf(
+                StudentEntity("r1", "s1", "1", "24Z001", "Arun", "", "", 0),
+                StudentEntity("r1", "s2", "2", "24Z001", "Banu", "", "", 1),
+            ),
+            emptyList(),
+            emptyList(),
+            emptyList(),
+        )
+        val encoded = BackupCodec.createNative(bundle)
+        val result = runCatching { BackupCodec.decode(encoded) }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("duplicate register"))
+    }
+
+    @Test
     fun legacySchema2WithStale1510AppVersionImportsAfterFnvVerification() {
         val data = """{"meta":{"defHours":2,"passMark":75,"condFee":65,"condMed":50,"bandPts":3,"minHours":1,"courseCode":"ZU1","className":"I B.Sc.","startDate":"2026-07-01","endDate":"2026-07-31"},"days":{"2026-07-01":{"hours":2,"on":true,"done":true,"note":""}},"roster":[{"sid":"s1","roll":"1","regno":"24Z001","name":"ரமேஷ்","from":"","to":""}],"marks":{"2026-07-01":{"s1":"PO"}},"audit":[],"schema":2}"""
         val checksum = LegacyChecksum.fnv1a32(data)
