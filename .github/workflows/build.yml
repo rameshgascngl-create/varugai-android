@@ -60,6 +60,9 @@ jobs:
       - name: Required corrections source audit
         run: ./tools/audit-required-corrections.sh
 
+      - name: Final production hardening source audit
+        run: bash ./tools/audit-final-production-hardening.sh
+
       - name: Golden v15 to v16 migration parity
         run: ./gradlew --no-daemon testDebugUnitTest --tests 'com.gasczoology.varugai.data.backup.LegacyMigrationGoldenTest'
 
