@@ -1,5 +1,5 @@
 name: VARUGAI 16 Native Release Candidate
-# Trigger release-candidate validation on audited native HEAD; recovery-key encrypted backup gate
+# Trigger signed VARUGAI 16.0.1 candidate after festival-holiday device-QA correction
 
 on:
   push:
