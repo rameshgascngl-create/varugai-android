@@ -32,8 +32,8 @@ android {
         applicationId = "com.gasczoology.varugai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16001
-        versionName = "16.0.1"
+        versionCode = 16002
+        versionName = "16.0.2"
         resourceConfigurations += listOf("en")
     }
 
