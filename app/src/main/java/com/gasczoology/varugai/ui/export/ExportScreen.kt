@@ -10,15 +10,22 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.Card
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
@@ -37,12 +44,21 @@ fun ExportScreen(
     onCancelRestore: () -> Unit,
     onCommitRestore: () -> Unit,
     onCreateBackup: suspend () -> String,
+    onShowRecoveryKey: () -> Unit,
+    onHideRecoveryKey: () -> Unit,
+    onSubmitRecoveryKey: (String) -> Unit,
+    onCancelRecoveryKeyPrompt: () -> Unit,
     onNotify: (String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val bundle = state.bundle
+    var recoveryInput by rememberSaveable { mutableStateOf("") }
+
+    LaunchedEffect(state.recoveryKeyRequestedForRestore) {
+        if (!state.recoveryKeyRequestedForRestore) recoveryInput = ""
+    }
 
     fun writeUri(uri: Uri?, label: String, block: suspend (java.io.OutputStream) -> Unit) {
         if (uri == null) return
@@ -75,7 +91,7 @@ fun ExportScreen(
         out.write(NativeExportWriters.auditCsv(requireNotNull(bundle).audits).toByteArray(Charsets.UTF_8))
     } }
 
-    val jsonLauncher = rememberLauncherForActivityResult(
+    val backupLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.CreateDocument("application/json")
     ) { uri ->
         if (uri != null) scope.launch {
@@ -86,7 +102,7 @@ fun ExportScreen(
                         out.write(text.toByteArray(Charsets.UTF_8))
                     } ?: error("Could not open the selected destination.")
                 }
-            }.onSuccess { onNotify("JSON backup exported") }
+            }.onSuccess { onNotify("Encrypted backup exported") }
                 .onFailure { onNotify(it.message ?: "Backup export failed") }
         }
     }
@@ -103,7 +119,7 @@ fun ExportScreen(
         if (uri != null) scope.launch {
             runCatching {
                 withContext(Dispatchers.IO) {
-                    context.contentResolver.openInputStream(uri)?.use { input -> readUtf8Limited(input, 20 * 1024 * 1024) }
+                    context.contentResolver.openInputStream(uri)?.use { input -> readUtf8Limited(input, 30 * 1024 * 1024) }
                         ?: error("Could not open the selected backup.")
                 }
             }.onSuccess(onPreviewRestore)
@@ -124,7 +140,7 @@ fun ExportScreen(
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Storage status", style = MaterialTheme.typography.titleMedium)
-                    Text("Authoritative data: app-private Room database.")
+                    Text("Authoritative data: app-private encrypted Room database.")
                     Text("Automatic Android/cloud backup: disabled.")
                     Text("Network sync: none. Files leave the app only when you explicitly export them.")
                     if (bundle != null) {
@@ -165,17 +181,39 @@ fun ExportScreen(
         item {
             Card(Modifier.fillMaxWidth()) {
                 Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("Recovery key", style = MaterialTheme.typography.titleMedium)
+                    Text(
+                        if (state.recoveryKeyConfigured)
+                            "Recovery key is set. New backups use the same key so they can be restored on a replacement phone."
+                        else
+                            "Set up one recovery key before the first backup. Write it down and keep it separately from this phone."
+                    )
+                    OutlinedButton(onClick = onShowRecoveryKey) {
+                        Text(if (state.recoveryKeyConfigured) "Show recovery key" else "Set up recovery key")
+                    }
+                    Text("The key is stored on this device only in Android-Keystore-protected form. Losing both the phone and the written key makes encrypted backups unrecoverable.")
+                }
+            }
+        }
+
+        item {
+            Card(Modifier.fillMaxWidth()) {
+                Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
                     Text("Backup / restore", style = MaterialTheme.typography.titleMedium)
-                    Text("VARUGAI 16 exports schema-3 JSON with SHA-256 integrity checking. VARUGAI 15.x schema-2 backups remain importable after legacy FNV-1a verification.")
+                    Text("New VARUGAI 16 backups are AES-256-GCM encrypted. The inner schema-3 payload still carries SHA-256 integrity checking.")
+                    Text("VARUGAI 15.x schema-2 backups and older unencrypted VARUGAI 16 schema-3 backups remain importable.")
                     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Button(
-                            enabled = bundle != null,
-                            onClick = { jsonLauncher.launch(exportName(bundle, "backup", "json")) },
-                        ) { Text("Export JSON backup") }
+                            enabled = bundle != null && state.recoveryKeyConfigured,
+                            onClick = { backupLauncher.launch(exportName(bundle, "encrypted_backup", "json")) },
+                        ) { Text("Export encrypted backup") }
                         OutlinedButton(
                             enabled = bundle != null,
                             onClick = { restoreLauncher.launch(arrayOf("application/json", "text/plain", "application/octet-stream")) },
-                        ) { Text("Restore JSON") }
+                        ) { Text("Restore backup") }
+                    }
+                    if (!state.recoveryKeyConfigured) {
+                        Text("Encrypted export is disabled until the recovery key is generated and recorded.")
                     }
                     Text("Restore replaces the current register only after validation and confirmation. A failed restore is rolled back transactionally.")
                 }
@@ -194,6 +232,49 @@ fun ExportScreen(
                 }
             }
         }
+    }
+
+    state.shownRecoveryKey?.let { key ->
+        AlertDialog(
+            onDismissRequest = onHideRecoveryKey,
+            title = { Text("Your VARUGAI recovery key") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+                    Text("Write this key down exactly and store it separately from the phone.")
+                    SelectionContainer {
+                        Text(key, style = MaterialTheme.typography.headlineSmall)
+                    }
+                    Text("VARUGAI will not send this key anywhere. It is required to restore encrypted backups on another device.")
+                }
+            },
+            confirmButton = { TextButton(onClick = onHideRecoveryKey) { Text("I have recorded it") } },
+        )
+    }
+
+    if (state.recoveryKeyRequestedForRestore) {
+        AlertDialog(
+            onDismissRequest = onCancelRecoveryKeyPrompt,
+            title = { Text("Enter recovery key") },
+            text = {
+                Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                    Text("This backup is encrypted. Enter the 20-character VARUGAI recovery key used when it was created.")
+                    OutlinedTextField(
+                        value = recoveryInput,
+                        onValueChange = { recoveryInput = it },
+                        singleLine = true,
+                        label = { Text("Recovery key") },
+                        placeholder = { Text("XXXX-XXXX-XXXX-XXXX-XXXX") },
+                    )
+                }
+            },
+            confirmButton = {
+                TextButton(
+                    enabled = recoveryInput.isNotBlank(),
+                    onClick = { onSubmitRecoveryKey(recoveryInput) },
+                ) { Text("Unlock") }
+            },
+            dismissButton = { TextButton(onClick = onCancelRecoveryKeyPrompt) { Text("Cancel") } },
+        )
     }
 
     state.pendingRestore?.let { pending ->
@@ -233,7 +314,7 @@ private fun readUtf8Limited(input: java.io.InputStream, limit: Int): String {
         val n = input.read(buffer)
         if (n < 0) break
         total += n
-        require(total <= limit) { "Backup exceeds the 20 MB safety limit." }
+        require(total <= limit) { "Backup exceeds the safe import size limit." }
         out.write(buffer, 0, n)
     }
     return out.toString(Charsets.UTF_8.name()).removePrefix("\uFEFF")
