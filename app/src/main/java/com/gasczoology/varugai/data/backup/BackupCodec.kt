@@ -259,6 +259,8 @@ object BackupCodec {
         require(students.all { it.roll.isNotBlank() && it.name.isNotBlank() }) { "Backup contains a student with missing roll or name." }
         require(students.map { it.sid }.distinct().size == students.size) { "Backup contains duplicate student IDs." }
         require(students.map { it.roll }.distinct().size == students.size) { "Backup contains duplicate roll numbers." }
+        val nonblankRegisterNumbers = students.map { it.registerNumber.trim().uppercase() }.filter { it.isNotBlank() }
+        require(nonblankRegisterNumbers.distinct().size == nonblankRegisterNumbers.size) { "Backup contains duplicate register numbers." }
         val dayByDate = days.associateBy { it.date }
         require(days.map { it.date }.distinct().size == days.size) { "Backup contains duplicate calendar dates." }
         val sids = students.mapTo(hashSetOf()) { it.sid }
