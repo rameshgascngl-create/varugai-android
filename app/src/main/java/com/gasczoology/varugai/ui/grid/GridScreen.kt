@@ -7,6 +7,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.sizeIn
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
@@ -20,7 +21,13 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.Surface
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.semantics.contentDescription
+import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.text.style.TextAlign
@@ -50,6 +57,7 @@ fun GridScreen(
 ) {
     val day = state.selectedDay
     val matrixScroll = rememberScrollState()
+    var accessibleMode by rememberSaveable { mutableStateOf(false) }
     LazyColumn(
         modifier = modifier.fillMaxWidth(),
         verticalArrangement = Arrangement.spacedBy(10.dp),
@@ -164,7 +172,31 @@ fun GridScreen(
             Text("Recommended entry: All Present → tap only exceptions to A or OD → Complete day.")
         }
 
-        if (state.days.isNotEmpty()) {
+        item {
+            OutlinedButton(onClick = { accessibleMode = !accessibleMode }) {
+                Text(if (accessibleMode) "Show semester matrix" else "Accessible selected-day view")
+            }
+            if (accessibleMode) {
+                Text("Student-by-student controls announce the student, date, hour and current attendance state for screen readers.")
+            }
+        }
+
+        if (accessibleMode && day != null) {
+            if (!day.isWorking) {
+                item {
+                    Text("Selected date is a holiday / excluded day${if (day.note.isNotBlank()) ": ${day.note}" else ""}.")
+                }
+            } else {
+                items(state.visibleStudents, key = { "accessible-${it.sid}" }) { student ->
+                    AccessibleStudentDayRow(
+                        student = student,
+                        day = day,
+                        marks = state.allMarksByCell,
+                        onCycleMark = onCycleMark,
+                    )
+                }
+            }
+        } else if (state.days.isNotEmpty()) {
             item {
                 Text("Semester grid — student names stay on the left; drag the dates horizontally →", style = MaterialTheme.typography.titleMedium)
                 Row(Modifier.fillMaxWidth()) {
@@ -193,6 +225,39 @@ fun GridScreen(
                     scroll = matrixScroll,
                     onCycleMark = onCycleMark,
                 )
+            }
+        }
+    }
+}
+
+@Composable
+private fun AccessibleStudentDayRow(
+    student: StudentEntity,
+    day: com.gasczoology.varugai.data.db.TeachingDayEntity,
+    marks: Map<Triple<String, String, Int>, String>,
+    onCycleMark: (StudentEntity, String, Int) -> Unit,
+) {
+    val active = AttendanceCalculator.isActiveOn(student, day.date)
+    Card(Modifier.fillMaxWidth()) {
+        Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text("${student.name} · Roll ${student.roll}", style = MaterialTheme.typography.titleSmall)
+            if (!active) {
+                Text("Not counted on ${displayDate(day.date)}")
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth().horizontalScroll(rememberScrollState()),
+                    horizontalArrangement = Arrangement.spacedBy(6.dp),
+                ) {
+                    for (hour in 1..day.hours) {
+                        val status = marks[Triple(day.date, student.sid, hour)]
+                        AttendanceCell(
+                            hour = hour,
+                            status = status,
+                            description = "${student.name}, ${displayDate(day.date)}, hour ${hour}, ${statusDescription(status)}. Double tap to change attendance.",
+                            onClick = { onCycleMark(student, day.date, hour) },
+                        )
+                    }
+                }
             }
         }
     }
@@ -267,6 +332,7 @@ private fun DayAttendanceCell(
                     AttendanceCell(
                         hour = hour,
                         status = status,
+                        description = "${student.name}, ${displayDate(day.date)}, hour ${hour}, ${statusDescription(status)}. Double tap to change attendance.",
                         onClick = { onCycleMark(student, day.date, hour) },
                     )
                 }
@@ -276,7 +342,7 @@ private fun DayAttendanceCell(
 }
 
 @Composable
-private fun AttendanceCell(hour: Int, status: String?, onClick: () -> Unit) {
+private fun AttendanceCell(hour: Int, status: String?, description: String, onClick: () -> Unit) {
     val colors = MaterialTheme.colorScheme
     val background = when (status) {
         "P" -> colors.primaryContainer
@@ -292,7 +358,7 @@ private fun AttendanceCell(hour: Int, status: String?, onClick: () -> Unit) {
     }
     Surface(
         onClick = onClick,
-        modifier = Modifier.width(48.dp),
+        modifier = Modifier.width(48.dp).sizeIn(minHeight = 48.dp).semantics { contentDescription = description },
         color = background,
         contentColor = foreground,
         shape = MaterialTheme.shapes.small,
@@ -315,6 +381,13 @@ private fun displayStatus(status: String?): String = when (status) {
     "O" -> "OD"
     null -> "–"
     else -> status
+}
+
+private fun statusDescription(status: String?): String = when (status) {
+    "P" -> "Present"
+    "A" -> "Absent"
+    "O" -> "On Duty"
+    else -> "Blank"
 }
 
 private fun dayColumnWidth(day: com.gasczoology.varugai.data.db.TeachingDayEntity): Dp =
