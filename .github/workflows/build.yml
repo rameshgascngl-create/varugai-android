@@ -63,18 +63,28 @@ jobs:
       - name: Golden v15 to v16 migration parity
         run: ./gradlew --no-daemon testDebugUnitTest --tests 'com.gasczoology.varugai.data.backup.LegacyMigrationGoldenTest'
 
+      - name: Release-blocking JVM cases A-J
+        run: |
+          ./gradlew --no-daemon testDebugUnitTest \
+            --tests 'com.gasczoology.varugai.domain.attendance.ReleaseBlockingAttendanceCasesTest' \
+            --tests 'com.gasczoology.varugai.data.backup.ReleaseBlockingBackupCaseJTest'
+
       - name: Unit tests
         run: ./gradlew --no-daemon testDebugUnitTest
 
       - name: Lint
         run: ./gradlew --no-daemon lintDebug lintRelease
 
+      - name: Compile instrumented recovery tests
+        run: ./gradlew --no-daemon assembleDebugAndroidTest
+
       - name: Compile native debug and unsigned release audit APKs
         run: ./gradlew --no-daemon assembleDebug assembleRelease
 
       - name: Audit release variant
         run: |
-          APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1)
+          APK=$(find app/build/outputs/apk/release -name '*universal*release*.apk' | head -1)
+          if [ -z "$APK" ]; then APK=$(find app/build/outputs/apk/release -name '*.apk' | head -1); fi
           test -n "$APK"
           unzip -l "$APK" | tee release-apk-file-list.txt
           grep -q 'libsqlcipher.so' release-apk-file-list.txt
@@ -106,6 +116,7 @@ jobs:
           name: VARUGAI-16.0.2-phase-gate
           path: |
             app/build/outputs/apk/debug/*.apk
+            app/build/outputs/apk/androidTest/**
             app/build/reports/tests/
             app/build/reports/lint-results-debug.html
             app/build/reports/lint-results-release.html
