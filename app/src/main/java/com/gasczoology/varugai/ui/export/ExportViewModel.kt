@@ -31,6 +31,7 @@ data class ExportUiState(
     val recoveryKeyConfigured: Boolean = false,
     val shownRecoveryKey: String? = null,
     val recoveryKeyRequestedForRestore: Boolean = false,
+    val lastFullBackupAt: Long? = null,
 )
 
 private data class BackupUiState(
@@ -43,7 +44,7 @@ private data class BackupUiState(
 
 class ExportViewModel(
     private val repository: VarugaiRepository,
-    preferences: VarugaiPreferences,
+    private val preferences: VarugaiPreferences,
     private val recoveryKeyManager: RecoveryKeyManager,
 ) : ViewModel() {
     private val pendingRestore = MutableStateFlow<BackupImport?>(null)
@@ -73,6 +74,10 @@ class ExportViewModel(
         }
     }
 
+    private val lastFullBackupAt: Flow<Long?> = currentRegister.flatMapLatest { register ->
+        if (register == null) flowOf(null) else preferences.lastFullBackupAt(register.id)
+    }
+
     private val backupUi: Flow<BackupUiState> =
         combine(
             pendingRestore,
@@ -84,7 +89,7 @@ class ExportViewModel(
             BackupUiState(pending, msg, configured, shown, requested)
         }
 
-    val uiState: StateFlow<ExportUiState> = combine(bundle, backupUi) { data, backup ->
+    val uiState: StateFlow<ExportUiState> = combine(bundle, backupUi, lastFullBackupAt) { data, backup, backupAt ->
         ExportUiState(
             bundle = data,
             pendingRestore = backup.pendingRestore,
@@ -92,6 +97,7 @@ class ExportViewModel(
             recoveryKeyConfigured = backup.recoveryKeyConfigured,
             shownRecoveryKey = backup.shownRecoveryKey,
             recoveryKeyRequestedForRestore = backup.recoveryKeyRequestedForRestore,
+            lastFullBackupAt = backupAt,
         )
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), ExportUiState())
 
@@ -182,6 +188,12 @@ class ExportViewModel(
         }.onFailure {
             message.value = it.message ?: "Restore failed. The previous register was kept unchanged."
         }
+    }
+
+    fun markBackupSuccessful() = viewModelScope.launch {
+        val registerId = uiState.value.bundle?.register?.id ?: return@launch
+        preferences.setLastFullBackupAt(registerId, System.currentTimeMillis())
+        message.value = "Encrypted Full JSON backup exported"
     }
 
     fun notify(text: String) {
