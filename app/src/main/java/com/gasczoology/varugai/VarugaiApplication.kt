@@ -13,6 +13,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
@@ -47,7 +48,7 @@ class VarugaiApplication : Application() {
             val repository = VarugaiRepository(database)
             val initial = repository.ensureInitialRegister()
             val stored = preferences.currentRegisterIdValueOrNull()
-            val selected = repository.registersSnapshot().firstOrNull { it.id == stored } ?: initial
+            val selected = repository.registers.first().firstOrNull { it.id == stored } ?: initial
             preferences.setCurrentRegisterId(selected.id)
             databaseInstance = database
             _databaseState.value = DatabaseOpenState.Ready(repository)
