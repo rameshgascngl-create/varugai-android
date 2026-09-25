@@ -36,6 +36,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.gasczoology.varugai.ui.grid.GridScreen
+import com.gasczoology.varugai.ui.about.AboutScreen
 import com.gasczoology.varugai.ui.export.ExportScreen
 import com.gasczoology.varugai.ui.export.ExportViewModel
 import com.gasczoology.varugai.ui.grid.GridViewModel
@@ -159,11 +160,12 @@ private fun VarugaiApp(
             TopAppBar(
                 title = {
                     androidx.compose.foundation.layout.Column {
-                        Text("VARUGAI 16")
+                        Text("VARUGAI 16.0.2")
                         Text("Semester attendance grid", style = androidx.compose.material3.MaterialTheme.typography.labelMedium)
                     }
                 },
                 actions = {
+                    TextButton(onClick = { navController.navigate(VarugaiDestination.About.route) { launchSingleTop = true } }) { Text("Privacy & Help") }
                     TextButton(onClick = onLockNow) { Text("Lock") }
                 }
             )
@@ -248,6 +250,12 @@ private fun VarugaiApp(
                     state = summaryState,
                     onFilter = summaryViewModel::setFilter,
                     onQuery = summaryViewModel::setQuery,
+                    modifier = Modifier.padding(horizontal = 16.dp),
+                )
+            }
+            composable(VarugaiDestination.About.route) {
+                AboutScreen(
+                    onBack = { navController.popBackStack() },
                     modifier = Modifier.padding(horizontal = 16.dp),
                 )
             }
