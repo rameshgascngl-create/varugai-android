@@ -22,6 +22,15 @@ class RosterFileParserTest {
     }
 
     @Test
+    fun pastedRosterRejectsDuplicateRegisterNumbers() {
+        val result = runCatching {
+            RosterFileParser.parsePastedRoster("1,24Z001,Arun\n2,24z001,Banu", true)
+        }
+        assertTrue(result.isFailure)
+        assertTrue(result.exceptionOrNull()?.message.orEmpty().contains("Duplicate register"))
+    }
+
+    @Test
     fun columnGuessRecognisesCommonHeaders() {
         val rows = listOf(
             listOf("S.No", "Register No", "Student Name"),
