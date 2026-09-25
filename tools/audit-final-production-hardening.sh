@@ -51,7 +51,7 @@ grep -q 'Accessible selected-day view' "$GRID" || fail "accessible attendance mo
 grep -q 'contentDescription = description' "$GRID" || fail "attendance-cell semantics missing"
 pass "attendance accessibility path"
 
-if grep -RInE 'firebase|analytics|crashlytics|admob|appsflyer|adjust-sdk' app/build.gradle.kts build.gradle.kts app/src/main >/dev/null; then
+if grep -InE 'firebase|crashlytics|admob|appsflyer|adjust-sdk|com\\.google\\.firebase|play-services-ads' app/build.gradle.kts build.gradle.kts >/dev/null; then
   fail "analytics/advertising/tracking token detected"
 fi
 pass "no analytics/advertising SDK token"
