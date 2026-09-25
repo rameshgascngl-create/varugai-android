@@ -28,7 +28,7 @@ abstract class VarugaiDatabase : RoomDatabase() {
     abstract fun auditEventDao(): AuditEventDao
 
     companion object {
-        private val MIGRATION_1_2 = object : Migration(1, 2) {
+        val MIGRATION_1_2 = object : Migration(1, 2) {
             override fun migrate(db: SupportSQLiteDatabase) {
                 db.execSQL("ALTER TABLE students ADD COLUMN attendanceEndDate TEXT NOT NULL DEFAULT ''")
             }
