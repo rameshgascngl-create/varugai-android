@@ -1,7 +1,7 @@
 # VARUGAI Privacy Policy
 
 **Effective date:** 25 September 2026  
-**Applies to:** VARUGAI 16.0.2 (`com.gasczoology.varugai`)
+**Applies to:** VARUGAI 16.0.3 (`com.gasczoology.varugai`)
 
 VARUGAI is an offline attendance register and academic attendance manager intended for authorized faculty or institutional staff.
 
