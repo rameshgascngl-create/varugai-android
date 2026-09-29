@@ -14,7 +14,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.unit.dp
 
-private const val PRIVACY_URL = "https://github.com/rameshgascngl-create/varugai-android/blob/audit/v16.0.2-final-production-hardening/PRIVACY_POLICY.md"
+private const val PRIVACY_URL = "https://github.com/rameshgascngl-create/varugai-android/blob/release/v16.0.3-indus/PRIVACY_POLICY.md"
 private const val SUPPORT_URL = "https://github.com/rameshgascngl-create/varugai-android/issues"
 
 @Composable
@@ -29,7 +29,7 @@ fun AboutScreen(
     ) {
         item {
             Text("About & Privacy", style = MaterialTheme.typography.headlineSmall)
-            Text("VARUGAI 16.0.2 · version code 16002")
+            Text("VARUGAI 16.0.3 · version code 16003")
             Text("Offline attendance register and academic attendance manager for authorized faculty or institutional staff.")
         }
         item {
