@@ -32,8 +32,8 @@ android {
         applicationId = "com.gasczoology.varugai"
         minSdk = 24
         targetSdk = 36
-        versionCode = 16003
-        versionName = "16.0.3"
+        versionCode = 16004
+        versionName = "16.0.4"
         resourceConfigurations += listOf("en")
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
