@@ -1,9 +1,9 @@
-name: VARUGAI 16.0.3 Native Release Candidate
-# Validate signed VARUGAI 16.0.3 Indus submission candidate
+name: VARUGAI 16.0.4 Native Release Candidate
+# Validate signed VARUGAI 16.0.4 Indus submission candidate
 
 on:
   push:
-    branches: [ release/varugai-native-v16, audit/v16.0.2-final-production-hardening, release/v16.0.3-indus ]
+    branches: [ release/varugai-native-v16, audit/v16.0.2-final-production-hardening, release/v16.0.4-indus ]
   workflow_dispatch:
 
 permissions:
@@ -119,8 +119,8 @@ jobs:
           test -s out/native-abis.txt
 
           grep -q "package: name='com.gasczoology.varugai'" out/apk-badging.txt
-          grep -q "versionCode='16003'" out/apk-badging.txt
-          grep -q "versionName='16.0.3'" out/apk-badging.txt
+          grep -q "versionCode='16004'" out/apk-badging.txt
+          grep -q "versionName='16.0.4'" out/apk-badging.txt
           ! grep -q 'android:debuggable(0x0101000f)=(type 0x12)0xffffffff' out/release-manifest.txt
           ! grep -q 'android.permission.INTERNET' out/release-manifest.txt
           ! grep -q 'android.permission.CAMERA' out/release-manifest.txt
