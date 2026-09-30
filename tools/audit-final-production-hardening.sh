@@ -14,8 +14,8 @@ GRID=app/src/main/java/com/gasczoology/varugai/ui/grid/GridScreen.kt
 ROSTER=app/src/main/java/com/gasczoology/varugai/data/importer/RosterFileParser.kt
 BACKUP=app/src/main/java/com/gasczoology/varugai/data/backup/BackupCodec.kt
 
-grep -q 'versionName = "16.0.3"' "$GRADLE" || fail "versionName is not 16.0.3"
-grep -q 'versionCode = 16003' "$GRADLE" || fail "versionCode is not 16003"
+grep -q 'versionName = "16.0.4"' "$GRADLE" || fail "versionName is not 16.0.4"
+grep -q 'versionCode = 16004' "$GRADLE" || fail "versionCode is not 16004"
 grep -q 'applicationId = "com.gasczoology.varugai"' "$GRADLE" || fail "package changed"
 pass "release identity"
 
