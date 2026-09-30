@@ -1,35 +1,67 @@
 # VARUGAI Privacy Policy
 
-**Effective date:** 25 September 2026  
-**Applies to:** VARUGAI 16.0.3 (`com.gasczoology.varugai`)
+**Effective date:** 30 September 2026  
+**Applies to:** VARUGAI 16.0.4 (`com.gasczoology.varugai`)
 
-VARUGAI is an offline attendance register and academic attendance manager intended for authorized faculty or institutional staff.
+VARUGAI is an offline Android attendance-register application for authorized college faculty and academic institutions.
 
-## Data stored locally
+## Services provided by VARUGAI
 
-VARUGAI may store institution, department, faculty, course, class, semester and academic-year information; student names, roll numbers and register numbers; attendance marks; calendar and holiday information; notes; and audit records. These are personal or academic records even though they remain local to the device.
+VARUGAI provides the following academic attendance-management services:
 
-## Collection and sharing
+- creation and management of class/register details;
+- student roster entry and import;
+- period-wise attendance marking using Present, Absent and On Duty (OD);
+- teaching-day, holiday and working-day calendar management;
+- attendance totals, cumulative percentages and eligibility summaries;
+- attendance reports and user-initiated export to CSV, XLSX and PDF;
+- encrypted backup and restore of VARUGAI register data;
+- PIN-protected access and local audit/history records.
 
-The current version does not transmit attendance or student records to a developer server. It contains no advertising, analytics, behavioral tracking, cloud synchronization or crash-reporting SDK. It does not request Internet, camera, microphone, contacts, location, SMS or phone permissions.
+VARUGAI does not provide social networking, messaging, advertising, e-commerce, location tracking, online payments or cloud attendance services.
 
-Files leave VARUGAI only when the user explicitly exports, shares or restores them through Android's system file interfaces. CSV, XLSX and PDF exports are not encrypted by VARUGAI after they are handed to the destination application. Portable VARUGAI backups are encrypted.
+## Data handled by the app
 
-## Local security
+Depending on how the faculty user configures the app, VARUGAI may store institution, department, faculty, course, class, semester and academic-year details; student names; roll numbers; register numbers; attendance marks; teaching-calendar information; notes; and audit/history records.
 
-The local Room database uses SQLCipher. Database key material and PIN verification use Android Keystore-backed cryptographic material. Sensitive app screens are protected using Android's secure-window mechanism. Portable backups use authenticated encryption and require the VARUGAI recovery key.
+These records are stored locally on the user's device for attendance-register management.
 
-## Recovery key
+## Offline operation and data transmission
 
-Record the recovery key separately from the phone. If both the device-held key and the separately recorded recovery key are lost, encrypted portable backups may be unrecoverable. VARUGAI cannot reconstruct a lost recovery key.
+VARUGAI is designed to operate offline. The current version does not upload student rosters, attendance records or academic records to a developer-operated server and does not synchronize them to a cloud service.
 
-## Deletion
+The app contains no advertising, analytics, behavioral-tracking or crash-reporting SDK. It does not request Internet, camera, microphone, contacts, location, SMS or phone permissions.
 
-A register can be deleted from Setup, removing its locally stored roster, calendar, attendance and audit history. Uninstalling VARUGAI removes its local application data. Android automatic backup and device-transfer backup are disabled for VARUGAI data.
+## Export, sharing and backup
 
-## Contact
+Files leave VARUGAI only when the user explicitly chooses an export, share, backup or restore action through Android's system file interfaces.
 
-Support and privacy questions:  
-https://github.com/rameshgascngl-create/varugai-android/issues
+CSV, XLSX and PDF exports are not encrypted by VARUGAI after they are handed to the destination application selected by the user.
 
-If a future version introduces networking, analytics, advertising, cloud synchronization or materially different data handling, this policy and the store Data Safety declaration must be updated before release.
+Portable VARUGAI backup files are encrypted and require the VARUGAI recovery key for restoration.
+
+## Security
+
+The local Room database uses SQLCipher. Database key material and PIN verification use Android Keystore-backed cryptographic material. Sensitive app screens use Android secure-window protection. Portable backups use authenticated encryption.
+
+## Data retention and deletion
+
+VARUGAI retains locally stored register information until the user deletes the register or uninstalls the application.
+
+Deleting a register removes its locally stored roster, calendar, attendance and audit/history data. Uninstalling VARUGAI removes its local app data. Android automatic backup and device-transfer backup are disabled for VARUGAI data.
+
+## User responsibility
+
+VARUGAI is intended for authorized faculty or institutional users. Users are responsible for handling student information in accordance with their institution's policies and applicable privacy requirements.
+
+## Developer / grievance contact
+
+**Developer:** Ramesh Rajamoni  
+**Support and privacy email:** rameshgascngl@gmail.com  
+**Project support:** https://github.com/rameshgascngl-create/varugai-android/issues
+
+For privacy, data-handling or grievance-related questions, users may contact the email address above.
+
+## Changes to this policy
+
+If a future version introduces networking, analytics, advertising, cloud synchronization or materially different data handling, this Privacy Policy and the corresponding app-store Data Safety declaration will be updated before release.
